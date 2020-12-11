@@ -39,7 +39,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32l4xx_hal.h"
-#include "CS5490.h"
+
 
 /* USER CODE BEGIN Includes */
 
@@ -62,8 +62,8 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_UART5_Init(void);
-static void MX_USART1_UART_Init(void);
 static void MX_I2C3_Init(void);
+static void MX_USART1_UART_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -82,7 +82,7 @@ static void MX_I2C3_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -105,38 +105,30 @@ int main(void)
   MX_GPIO_Init();
   MX_I2C2_Init();
   MX_UART5_Init();
-  MX_USART1_UART_Init();
   MX_I2C3_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+	HAL_GPIO_WritePin(HEATER_On_GPIO_Port, HEATER_On_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(LED_BL_GPIO_Port, LED_BL_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(LED_ACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(LED_REACT_GPIO_Port, LED_REACT_Pin, GPIO_PIN_RESET);
-	
 
-  uint8_t receiveFromL1[] = "Hello   1\n";
+	CS5490 chip;
 	
-	CS5490 *chip;
-	chip->MCLK = MCLK_default;
+	getFreq(chip);
 	
-	setBaudRate(chip, 600);
+	HAL_UART_Transmit(&huart5, chip.data, 3, 100);
 	
-	uint8_t* freq = getFreq(chip);
-
 	
-	HAL_GPIO_TogglePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin);
-	HAL_UART_Transmit(&huart5, receiveFromL1, 11, 0xFFFF);
-	HAL_Delay(1000);
-	HAL_UART_Transmit(&huart5, freq, 4, 0xFFFF);
-  
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
   /* USER CODE END WHILE */
-
+		//HAL_UART_Transmit(&huart5, receiveFromL1, 8, 0xFFFF);
+		HAL_Delay(1000);
   /* USER CODE BEGIN 3 */
 
   }
@@ -165,7 +157,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLN = 16;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
   RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
-  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
@@ -180,7 +172,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
@@ -220,7 +212,7 @@ static void MX_I2C2_Init(void)
 {
 
   hi2c2.Instance = I2C2;
-  hi2c2.Init.Timing = 0x10909CEC;
+  hi2c2.Init.Timing = 0x00909BEB;
   hi2c2.Init.OwnAddress1 = 0;
   hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -254,7 +246,7 @@ static void MX_I2C3_Init(void)
 {
 
   hi2c3.Instance = I2C3;
-  hi2c3.Init.Timing = 0x10909CEC;
+  hi2c3.Init.Timing = 0x00909BEB;
   hi2c3.Init.OwnAddress1 = 0;
   hi2c3.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c3.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -288,7 +280,7 @@ static void MX_UART5_Init(void)
 {
 
   huart5.Instance = UART5;
-  huart5.Init.BaudRate = 2400;
+  huart5.Init.BaudRate = 9600;
   huart5.Init.WordLength = UART_WORDLENGTH_8B;
   huart5.Init.StopBits = UART_STOPBITS_1;
   huart5.Init.Parity = UART_PARITY_NONE;
@@ -297,7 +289,7 @@ static void MX_UART5_Init(void)
   huart5.Init.OverSampling = UART_OVERSAMPLING_16;
   huart5.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart5.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart5) != HAL_OK)
+  if (HAL_RS485Ex_Init(&huart5, UART_DE_POLARITY_HIGH,0 ,0) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
@@ -309,7 +301,7 @@ static void MX_USART1_UART_Init(void)
 {
 
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 2400;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -348,13 +340,23 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOE_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, RX_TX_485_Pin|LED_REACT_Pin|LED_ACT_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(HEATER_On_GPIO_Port, HEATER_On_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, MCU_RX_TX_Pin|LED_REACT_Pin|LED_ACT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_BL_GPIO_Port, LED_BL_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : RX_TX_485_Pin LED_REACT_Pin LED_ACT_Pin */
-  GPIO_InitStruct.Pin = RX_TX_485_Pin|LED_REACT_Pin|LED_ACT_Pin;
+  /*Configure GPIO pin : HEATER_On_Pin */
+  GPIO_InitStruct.Pin = HEATER_On_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(HEATER_On_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : MCU_RX_TX_Pin LED_REACT_Pin LED_ACT_Pin */
+  GPIO_InitStruct.Pin = MCU_RX_TX_Pin|LED_REACT_Pin|LED_ACT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

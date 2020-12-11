@@ -28,16 +28,16 @@
 typedef struct CS5490
 {
 	uint8_t data[3]; //data buffer for read and write
-	uint8_t selectedPage;
+	int selectedPage;
 	float MCLK;
 } CS5490;
 
 
-void write(CS5490 *chip, int page, int address, uint8_t value);
-void read(CS5490 *chip, int page, int address);
-void instruct(CS5490 *chip, int instruction);
-uint8_t readReg(CS5490 *chip, int page, int address);
-void setBaudRate(CS5490 *chip, long value);
-uint8_t* getFreq(CS5490 *chip);
+void write(CS5490 chip, int page, int address, uint32_t value);
+void read(CS5490 chip, int page, int address);
+void instruct(CS5490 chip, int instruction);
+uint8_t readReg(CS5490 chip, int page, int address);
+void setBaudRate(CS5490 chip, uint16_t value);
+void getFreq(CS5490 chip);
 
 #endif
