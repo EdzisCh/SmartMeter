@@ -17,7 +17,7 @@ void write(CS5490 chip, int page, int address, uint32_t value)
 	//Send information
 	for(int i=0; i<3 ; i++){
 		chip.data[i] = value & 0xFF;
-		HAL_UART_Transmit(&huart1, &(chip.data[i]), 1, 100);  
+		HAL_UART_Transmit(&huart1, (uint8_t *) &(chip.data[i]), 1, 100);  
 		value >>= 8;
 	}
 	
@@ -40,7 +40,7 @@ void read(CS5490 chip, int page, int address)
 	
 	
 	for(int i=2; i>=0; i++){
-		if(HAL_UART_Receive(&huart1, &(chip.data[i]), 1, 100) != HAL_OK)
+		if(HAL_UART_Receive(&huart1, (uint8_t *) &(chip.data[i]), 1, 100) != HAL_OK)
 		{
 			HAL_GPIO_TogglePin(LED_REACT_GPIO_Port, LED_REACT_Pin);
 			HAL_GPIO_TogglePin(LED_ACT_GPIO_Port, LED_ACT_Pin);
@@ -56,31 +56,23 @@ void instruct(CS5490 chip, int value)
 }
 
 
-void setBaudRate(CS5490 chip, uint16_t value){
-
-	write(chip, 0x80, 0x07, value);// 0x80 instead of 0x00 in order to force a page selection command on page 0
-	HAL_Delay(100);
-	
-	return;
-}
-
-
 uint32_t concatData(CS5490 chip){
 	uint8_t output;
-	output = (output + chip.data[2]) << 8;
+	output = (output + chip.data[0]) << 8;
 	output = (output + chip.data[1]) << 8;
-	output = output + chip.data[0];
+	output = output + chip.data[2];
 	return output;
 }
 
 
-void getFreq(CS5490 chip){
+uint32_t getFreq(CS5490 chip){
 	//Page 16, Address 49
 	read(chip, 16,49);
+	return concatData(chip);
 }
 
 
-uint8_t readReg(CS5490 chip, int page, int address){
+uint32_t readReg(CS5490 chip, int page, int address){
 	read(chip, page, address);
 	return concatData(chip);
 }

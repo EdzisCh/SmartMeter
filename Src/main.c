@@ -115,9 +115,9 @@ int main(void)
 
 	CS5490 chip;
 	
-	getFreq(chip);
+	uint32_t freq = getFreq(chip);
 	
-	HAL_UART_Transmit(&huart5, chip.data, 3, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *) freq, 3, 100);
 	
 	
   /* USER CODE END 2 */
