@@ -37,8 +37,35 @@ typedef struct CS5490
 void write(CS5490 chip, int page, int address, uint32_t value);
 void read(CS5490 chip, int page, int address);
 void instruct(CS5490 chip, int instruction);
+
 uint32_t readReg(CS5490 chip, int page, int address);
-void setBaudRate(CS5490 chip, uint16_t value);
+
+void reset(CS5490 chip);
+void standby(CS5490 chip);
+void wakeup(CS5490 chip);
+
+uint32_t getPeakV(CS5490 chip);
+uint32_t getPeakI(CS5490 chip);
+
+uint32_t getInstI(CS5490 chip);
+uint32_t getInstV(CS5490 chip);
+uint32_t getInstP(CS5490 chip);
+
+uint32_t getRmsI(CS5490 chip);
+uint32_t getRmsV(CS5490 chip);
+
+uint32_t getAvgP(CS5490 chip);
+uint32_t getAvgQ(CS5490 chip);
+uint32_t getAvgS(CS5490 chip);
+
+uint32_t getInstQ(CS5490 chip);
+uint32_t getPF(CS5490 chip);
+
+uint32_t getTotalP(CS5490 chip);
+uint32_t getTotalS(CS5490 chip);
+uint32_t getTotalQ(CS5490 chip);
+
 uint32_t getFreq(CS5490 chip);
 
+uint32_t getTime(CS5490 chip);
 #endif
