@@ -27,6 +27,7 @@
 
 typedef struct CS5490
 {
+	UART_HandleTypeDef huart;
 	uint32_t data[3]; //data buffer for read and write
 	int selectedPage;
 	float MCLK;

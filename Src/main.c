@@ -113,6 +113,8 @@ int main(void)
 	HAL_GPIO_WritePin(LED_REACT_GPIO_Port, LED_REACT_Pin, GPIO_PIN_RESET);
 
 	CS5490 chip;
+	chip.huart = huart1;
+	chip.MCLK = MCLK_default;
 	
 	uint32_t freq = getFreq(chip);
 	
