@@ -1,5 +1,5 @@
-#ifndef __CS5490_H__
-#define __CS5490_H__
+#ifndef CS5490_H
+#define CS5490_H
 
 #include "stm32l4xx_hal.h"
 #include "math.h"
@@ -19,53 +19,53 @@
 #define baudRate_default 600
 
 // all comands templates
-#define readByte        0x00
-#define writeByte       0x40
-#define pageByte        0x80
+#define hardwarePageByte       0x00
+#define softwarePageByte       0x90
 #define instructionByte 0xC0
 
 
 typedef struct CS5490
 {
-	UART_HandleTypeDef huart;
-	uint32_t data[3]; //data buffer for read and write
+	UART_HandleTypeDef *huart;
+	uint8_t data[3];
 	int selectedPage;
 	float MCLK;
 } CS5490;
 
+void write(CS5490 *chip, int page, int address, uint32_t value);
+void read(CS5490 *chip, int page, int address);
+void instruct(CS5490 *chip, int instruction);
 
-void write(CS5490 chip, int page, int address, uint32_t value);
-void read(CS5490 chip, int page, int address);
-void instruct(CS5490 chip, int instruction);
+uint32_t concatData(CS5490 *chip);
 
-uint32_t readReg(CS5490 chip, int page, int address);
+uint32_t readReg(CS5490 *chip, int page, int address);
 
-void reset(CS5490 chip);
-void standby(CS5490 chip);
-void wakeup(CS5490 chip);
+void reset(CS5490 *chip);
+void standby(CS5490 *chip);
+void wakeup(CS5490 *chip);
 
-uint32_t getPeakV(CS5490 chip);
-uint32_t getPeakI(CS5490 chip);
+uint32_t getPeakV(CS5490 *chip);
+uint32_t getPeakI(CS5490 *chip);
 
-uint32_t getInstI(CS5490 chip);
-uint32_t getInstV(CS5490 chip);
-uint32_t getInstP(CS5490 chip);
+uint32_t getInstI(CS5490 *chip);
+uint32_t getInstV(CS5490 *chip);
+uint32_t getInstP(CS5490 *chip);
 
-uint32_t getRmsI(CS5490 chip);
-uint32_t getRmsV(CS5490 chip);
+uint32_t getRmsI(CS5490 *chip);
+uint32_t getRmsV(CS5490 *chip);
 
-uint32_t getAvgP(CS5490 chip);
-uint32_t getAvgQ(CS5490 chip);
-uint32_t getAvgS(CS5490 chip);
+uint32_t getAvgP(CS5490 *chip);
+uint32_t getAvgQ(CS5490 *chip);
+uint32_t getAvgS(CS5490 *chip);
 
-uint32_t getInstQ(CS5490 chip);
-uint32_t getPF(CS5490 chip);
+uint32_t getInstQ(CS5490 *chip);
+uint32_t getPF(CS5490 *chip);
 
-uint32_t getTotalP(CS5490 chip);
-uint32_t getTotalS(CS5490 chip);
-uint32_t getTotalQ(CS5490 chip);
+uint32_t getTotalP(CS5490 *chip);
+uint32_t getTotalS(CS5490 *chip);
+uint32_t getTotalQ(CS5490 *chip);
 
-uint32_t getFreq(CS5490 chip);
+uint32_t getFreq(CS5490 *chip);
 
-uint32_t getTime(CS5490 chip);
+uint32_t getTime(CS5490 *chip);
 #endif

@@ -39,7 +39,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32l4xx_hal.h"
-
+#include "CS5490.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -108,18 +108,20 @@ int main(void)
   MX_I2C3_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-	HAL_GPIO_WritePin(LED_BL_GPIO_Port, LED_BL_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(LED_BL_GPIO_Port, LED_BL_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(LED_ACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(LED_REACT_GPIO_Port, LED_REACT_Pin, GPIO_PIN_RESET);
 
 	CS5490 chip;
-	chip.huart = huart1;
-	chip.MCLK = MCLK_default;
+	chip.huart = &huart1;
 	
-	uint32_t freq = getFreq(chip);
+	uint32_t time = getTime(&chip);
 	
-	HAL_UART_Transmit(&huart5, (uint8_t *) freq, 3, 100);
-	
+	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_SET);
+	HAL_UART_Transmit(&huart5, (uint8_t *) &(time), 3, 1000);
+	HAL_Delay(10);
+	uint32_t freq = getFreq(&chip);
+	HAL_UART_Transmit(&huart5, (uint8_t *)(&freq), 3, 1000);
 	
   /* USER CODE END 2 */
 
@@ -341,23 +343,13 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOE_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(HEATER_On_GPIO_Port, HEATER_On_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, MCU_RX_TX_Pin|LED_REACT_Pin|LED_ACT_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, RX_TX_485_Pin|LED_REACT_Pin|LED_ACT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_BL_GPIO_Port, LED_BL_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : HEATER_On_Pin */
-  GPIO_InitStruct.Pin = HEATER_On_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(HEATER_On_GPIO_Port, &GPIO_InitStruct);
-
   /*Configure GPIO pins : MCU_RX_TX_Pin LED_REACT_Pin LED_ACT_Pin */
-  GPIO_InitStruct.Pin = MCU_RX_TX_Pin|LED_REACT_Pin|LED_ACT_Pin;
+  GPIO_InitStruct.Pin = RX_TX_485_Pin|LED_REACT_Pin|LED_ACT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
