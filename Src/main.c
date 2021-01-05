@@ -112,6 +112,8 @@ int main(void)
 	HAL_GPIO_WritePin(LED_ACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(LED_REACT_GPIO_Port, LED_REACT_Pin, GPIO_PIN_RESET);
 
+	uint8_t data;
+	
 	CS5490 chip;
 	chip.huart = &huart1;
 	
@@ -122,7 +124,7 @@ int main(void)
 	HAL_Delay(10);
 	uint32_t freq = getFreq(&chip);
 	HAL_UART_Transmit(&huart5, (uint8_t *)(&freq), 3, 1000);
-	
+	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -130,8 +132,16 @@ int main(void)
   while (1)
   {
   /* USER CODE END WHILE */
-		//HAL_UART_Transmit(&huart5, receiveFromL1, 8, 0xFFFF);
-		HAL_Delay(1000);
+		HAL_UART_Receive(&huart5, &data, 1, 100);
+		
+		if(data == '1')
+		{
+			HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_SET);
+			HAL_UART_Transmit(&huart5, (uint8_t *)(&freq), 3, 100);
+			
+			data = 0;
+			HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
+		}
   /* USER CODE BEGIN 3 */
 
   }
