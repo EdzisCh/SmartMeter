@@ -10,7 +10,7 @@
   * inserted by the user or by software development tools
   * are owned by their respective copyright owners.
   *
-  * COPYRIGHT(c) 2020 STMicroelectronics
+  * COPYRIGHT(c) 2021 STMicroelectronics
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -49,10 +49,38 @@
 
 /* Private define ------------------------------------------------------------*/
 
+#define KEY_3_Pin GPIO_PIN_5
+#define KEY_3_GPIO_Port GPIOE
+#define KEY_1_Pin GPIO_PIN_6
+#define KEY_1_GPIO_Port GPIOE
+#define KEY_2_Pin GPIO_PIN_13
+#define KEY_2_GPIO_Port GPIOC
+#define EXOSC32_Pin GPIO_PIN_14
+#define EXOSC32_GPIO_Port GPIOC
+#define XOSC32_Pin GPIO_PIN_15
+#define XOSC32_GPIO_Port GPIOC
 #define SDA_LCD_Pin GPIO_PIN_0
 #define SDA_LCD_GPIO_Port GPIOF
 #define SCL_LCD_Pin GPIO_PIN_1
 #define SCL_LCD_GPIO_Port GPIOF
+#define BEEP_Pin GPIO_PIN_9
+#define BEEP_GPIO_Port GPIOF
+#define OSC2_Pin GPIO_PIN_0
+#define OSC2_GPIO_Port GPIOH
+#define OSC1_Pin GPIO_PIN_1
+#define OSC1_GPIO_Port GPIOH
+#define TAMPER2_Pin GPIO_PIN_2
+#define TAMPER2_GPIO_Port GPIOA
+#define TAMPER1_Pin GPIO_PIN_3
+#define TAMPER1_GPIO_Port GPIOA
+#define CLK_MEM_Pin GPIO_PIN_10
+#define CLK_MEM_GPIO_Port GPIOE
+#define CS_MEM_Pin GPIO_PIN_11
+#define CS_MEM_GPIO_Port GPIOE
+#define MOSI_MEM_Pin GPIO_PIN_12
+#define MOSI_MEM_GPIO_Port GPIOE
+#define MISO_MEM_Pin GPIO_PIN_13
+#define MISO_MEM_GPIO_Port GPIOE
 #define SCL_MEM_Pin GPIO_PIN_7
 #define SCL_MEM_GPIO_Port GPIOG
 #define SDA_MEM_Pin GPIO_PIN_8

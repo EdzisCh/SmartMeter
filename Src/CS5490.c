@@ -1,173 +1,160 @@
 #include "CS5490.h"
 
-void write(CS5490 *chip, int page, int address, uint32_t value)
+void cs5490_write( CS5490 *chip, int page, int address, uint32_t value )
 {
 	
-	HAL_UART_Transmit(chip->huart, (uint8_t *) &page, 1, 100);
-	chip->selectedPage = page;
-	HAL_UART_Transmit(chip->huart, (uint8_t *) &address, 1, 100);
-
+	HAL_UART_Transmit(chip->cs5490_huart, (uint8_t *) &page, 1, 100);
+	chip->cs5490_selectedPage = page;
+	HAL_UART_Transmit(chip->cs5490_huart, (uint8_t *) &address, 1, 100);
 	
-	for(int i=2; i>=0 ; i--)
+	for ( int i=2; i>=0 ; i-- )
 	{
-		chip->data[i] = value & 0xFF;
-		HAL_UART_Transmit(chip->huart, &(chip->data[i]), 1, 100);  
+		chip->cs5490_data[i] = value & 0xFF;
+		HAL_UART_Transmit(chip->cs5490_huart, &(chip->cs5490_data[i]), 1, 100);  
 		value >>= 8;
 	}
 	
 }
 
 
-void read(CS5490 *chip, int page, int address)
+void cs5490_read( CS5490 *chip, int page, int address )
 {
 	
-	HAL_UART_Transmit(chip->huart, (uint8_t *) &page, 1, 100);
-	HAL_UART_Transmit(chip->huart, (uint8_t *) &address, 1, 100);
+	HAL_UART_Transmit(chip->cs5490_huart, (uint8_t *) &page, 1, 100);
+	HAL_UART_Transmit(chip->cs5490_huart, (uint8_t *) &address, 1, 100);
 	
-	for(int i=2; i>=0; i--)
+	for ( int i=2; i>=0; i-- )
 	{
-		HAL_UART_Receive(chip->huart, &(chip->data[i]), 1, 100);
+		HAL_UART_Receive(chip->cs5490_huart, &(chip->cs5490_data[i]), 1, 100);
 	}
 }
 
 
-void instruct(CS5490 *chip, int value)
+void cs5490_instruct( CS5490 *chip, int value )
 {
-	uint8_t buffer = (instructionByte | (uint8_t)value);
-	HAL_UART_Transmit(chip->huart, &buffer, 1, 100);
+	uint8_t buffer = (INSTRUCTION_BYTE | (uint8_t)value);
+	HAL_UART_Transmit(chip->cs5490_huart, &buffer, 1, 100);
 }
 
 
-uint32_t concatData(CS5490 *chip)
+uint32_t cs5490_concatData( CS5490 *chip )
 {
 	uint32_t output;
-	output = (output + chip->data[2]) << 8;
-	output = (output + chip->data[1]) << 8;
-	output = output + chip->data[0];
+	output = (output + chip->cs5490_data[2]) << 8;
+	output = (output + chip->cs5490_data[1]) << 8;
+	output = output + chip->cs5490_data[0];
 	return output;
 }
 
 
-uint32_t readReg(CS5490 *chip, int page, int address)
+uint32_t cs5490_readReg( CS5490 *chip, int page, int address )
 {
-	read(chip, page, address);
-	return concatData(chip);
+	cs5490_read(chip, page, address);
+	return cs5490_concatData(chip);
 }
 
- /*Instructions*/
-
-void reset(CS5490 *chip){
-	instruct(chip, 1);
+void cs5490_calibrate( CS5490 *chip, uint8_t type, uint8_t channel )
+{
+	HAL_Delay(2000);
+	
+	uint8_t calibration_byte = CALIBRATION_BYTE;
+	calibration_byte |= (type | channel);
+	cs5490_instruct(chip, calibration_byte);
+	
+	HAL_Delay(2000);
 }
 
-void standby(CS5490 *chip){
-	instruct(chip, 2);
+//===================================================================================
+
+void cs5490_reset( CS5490 *chip )
+{
+	cs5490_instruct(chip, 1);
 }
 
-void wakeUp(CS5490 *chip){
-	instruct(chip, 3);
+void cs5490_standby( CS5490 *chip )
+{
+	cs5490_instruct(chip, 2);
 }
 
-		/*MEASURMENT*/
-
-uint32_t getPeakV(CS5490 *chip){
-	//Page 0, Address 36
-	read(chip, hardwarePageByte, 0x24);
-	return concatData(chip);
+void cs5490_wakeUp( CS5490 *chip )
+{
+	cs5490_instruct(chip, 3);
 }
 
-uint32_t getPeakI(CS5490 *chip){
-	//Page 0, Address 37
-	read(chip, hardwarePageByte, 0x25);
-	return concatData(chip);
-}
+//===================================================================================
 
-uint32_t getInstI(CS5490 *chip){
+uint32_t cs5490_getInstCurrent( CS5490 *chip )
+{
 	//Page 16, Address 2
-	read(chip, softwarePageByte, 0x02);
-	return concatData(chip);
+	cs5490_read(chip, SOFTWARE_PAGE_BYTE, 0x02);
+	return cs5490_concatData(chip);
 }
 
-uint32_t getInstV(CS5490 *chip){
-	//Page 16, Address 3
-	read(chip, softwarePageByte, 0x03);
-	return concatData(chip);
-}
-
-uint32_t getInstP(CS5490 *chip){
-	//Page 16, Address 4
-	read(chip, softwarePageByte, 0x04);
-	return concatData(chip);
-}
-
-uint32_t getRmsI(CS5490 *chip){
-	//Page 16, Address 6
-	read(chip, softwarePageByte, 0x06);
-	return concatData(chip);
-}
-
-uint32_t getRmsV(CS5490 *chip){
-	//Page 16, Address 7
-	read(chip, softwarePageByte, 0x07);
-	return concatData(chip);
-}
-
-uint32_t getAvgP(CS5490 *chip){
-	//Page 16, Address 5
-	read(chip, softwarePageByte, 0x05);
-	return concatData(chip);
-}
-
-uint32_t getAvgQ(CS5490 *chip){
-	//Page 16, Address 14
-	read(chip, softwarePageByte, 0x0E);
-	return concatData(chip);
-}
-
-uint32_t getAvgS(CS5490 *chip){
-	//Page 16, Address 20
-	read(chip, softwarePageByte, 0x14);
-	return concatData(chip);
-}
-
-uint32_t getInstQ(CS5490 *chip){
-	//Page 16, Address 15
-	read(chip, softwarePageByte, 0x0F);
-	return concatData(chip);
-}
-
-uint32_t getPF(CS5490 *chip){
-	//Page 16, Address 21
-	read(chip, softwarePageByte, 0x15);
-	return concatData(chip);
-}
-
-uint32_t getTotalP(CS5490 *chip){
-	//Page 16, Address 29
-	read(chip, softwarePageByte, 0x1D);
-	return concatData(chip);
-}
-
-uint32_t getTotalS(CS5490 *chip){
-	//Page 16, Address 30
-	read(chip, softwarePageByte, 0x1E);
-	return concatData(chip);
-}
-
-uint32_t getTotalQ(CS5490 *chip){
-	//Page 16, Address 31
-	read(chip, softwarePageByte, 0x1F);
-	return concatData(chip);
-}
-
-uint32_t getFreq(CS5490 *chip)
+uint32_t cs5490_getInstVoltage( CS5490 *chip )
 {
-	read(chip, softwarePageByte, 0x31);
-	return concatData(chip);
+	//Page 16, Address 3
+	cs5490_read(chip, SOFTWARE_PAGE_BYTE, 0x03);
+	return cs5490_concatData(chip);
 }
 
-uint32_t getTime(CS5490 *chip){
+uint32_t cs5490_getInstPower( CS5490 *chip )
+{
+	//Page 16, Address 4
+	cs5490_read(chip, SOFTWARE_PAGE_BYTE, 0x04);
+	return cs5490_concatData(chip);
+}
+
+uint32_t cs5490_getAvgPower( CS5490 *chip )
+{
+	//Page 16, Address 5
+	cs5490_read(chip, SOFTWARE_PAGE_BYTE, 0x05);
+	return cs5490_concatData(chip);
+}
+
+uint32_t cs5490_getAvgQ( CS5490 *chip )
+{
+	//Page 16, Address 14
+	cs5490_read(chip, SOFTWARE_PAGE_BYTE, 0x0E);
+	return cs5490_concatData(chip);
+}
+
+uint32_t cs5490_getAvgS( CS5490 *chip )
+{
+	//Page 16, Address 20
+	cs5490_read(chip, SOFTWARE_PAGE_BYTE, 0x14);
+	return cs5490_concatData(chip);
+}
+
+uint32_t cs5490_getTotalPower( CS5490 *chip )
+{
+	//Page 16, Address 29
+	cs5490_read(chip, SOFTWARE_PAGE_BYTE, 0x1D);
+	return cs5490_concatData(chip);
+}
+
+uint32_t cs5490_getTotalS( CS5490 *chip )
+{
+	//Page 16, Address 30
+	cs5490_read(chip, SOFTWARE_PAGE_BYTE, 0x1E);
+	return cs5490_concatData(chip);
+}
+
+uint32_t cs5490_getTotalQ( CS5490 *chip )
+{
+	//Page 16, Address 31
+	cs5490_read(chip, SOFTWARE_PAGE_BYTE, 0x1F);
+	return cs5490_concatData(chip);
+}
+
+uint32_t cs5490_getFreq( CS5490 *chip )
+{
+	cs5490_read(chip, SOFTWARE_PAGE_BYTE, 0x31);
+	return cs5490_concatData(chip);
+}
+
+uint32_t cs5490_getTime( CS5490 *chip )
+{
 	//Page 16, Address 61
-	read(chip, softwarePageByte, 0x3D);
-	return concatData(chip);
+	cs5490_read(chip, SOFTWARE_PAGE_BYTE, 0x3D);
+	return cs5490_concatData(chip);
 }

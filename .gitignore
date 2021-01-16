@@ -1,4 +1,4 @@
 .mxproject
 MDK-ARM/SmartMeter/*
 MDK-ARM/DebugConfig/*
-GUI/build-SmartMeter-Desktop_Qt_5_15_2_MinGW_64_bit-Debug/*
+GUI/*

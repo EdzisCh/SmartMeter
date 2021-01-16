@@ -10,7 +10,7 @@
   * inserted by the user or by software development tools
   * are owned by their respective copyright owners.
   *
-  * COPYRIGHT(c) 2020 STMicroelectronics
+  * COPYRIGHT(c) 2021 STMicroelectronics
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -42,7 +42,9 @@ extern void _Error_Handler(char *, int);
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
-/**
+                        
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+                    /**
   * Initializes the Global MSP.
   */
 void HAL_MspInit(void)
@@ -168,6 +170,165 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c)
   /* USER CODE BEGIN I2C3_MspDeInit 1 */
 
   /* USER CODE END I2C3_MspDeInit 1 */
+  }
+
+}
+
+void HAL_QSPI_MspInit(QSPI_HandleTypeDef* hqspi)
+{
+
+  GPIO_InitTypeDef GPIO_InitStruct;
+  if(hqspi->Instance==QUADSPI)
+  {
+  /* USER CODE BEGIN QUADSPI_MspInit 0 */
+
+  /* USER CODE END QUADSPI_MspInit 0 */
+    /* Peripheral clock enable */
+    __HAL_RCC_QSPI_CLK_ENABLE();
+  
+    /**QUADSPI GPIO Configuration    
+    PE10     ------> QUADSPI_CLK
+    PE11     ------> QUADSPI_NCS
+    PE12     ------> QUADSPI_BK1_IO0
+    PE13     ------> QUADSPI_BK1_IO1 
+    */
+    GPIO_InitStruct.Pin = CLK_MEM_Pin|CS_MEM_Pin|MOSI_MEM_Pin|MISO_MEM_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF10_QUADSPI;
+    HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+  /* USER CODE BEGIN QUADSPI_MspInit 1 */
+
+  /* USER CODE END QUADSPI_MspInit 1 */
+  }
+
+}
+
+void HAL_QSPI_MspDeInit(QSPI_HandleTypeDef* hqspi)
+{
+
+  if(hqspi->Instance==QUADSPI)
+  {
+  /* USER CODE BEGIN QUADSPI_MspDeInit 0 */
+
+  /* USER CODE END QUADSPI_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_QSPI_CLK_DISABLE();
+  
+    /**QUADSPI GPIO Configuration    
+    PE10     ------> QUADSPI_CLK
+    PE11     ------> QUADSPI_NCS
+    PE12     ------> QUADSPI_BK1_IO0
+    PE13     ------> QUADSPI_BK1_IO1 
+    */
+    HAL_GPIO_DeInit(GPIOE, CLK_MEM_Pin|CS_MEM_Pin|MOSI_MEM_Pin|MISO_MEM_Pin);
+
+  /* USER CODE BEGIN QUADSPI_MspDeInit 1 */
+
+  /* USER CODE END QUADSPI_MspDeInit 1 */
+  }
+
+}
+
+void HAL_RTC_MspInit(RTC_HandleTypeDef* hrtc)
+{
+
+  if(hrtc->Instance==RTC)
+  {
+  /* USER CODE BEGIN RTC_MspInit 0 */
+
+  /* USER CODE END RTC_MspInit 0 */
+    /* Peripheral clock enable */
+    __HAL_RCC_RTC_ENABLE();
+  /* USER CODE BEGIN RTC_MspInit 1 */
+
+  /* USER CODE END RTC_MspInit 1 */
+  }
+
+}
+
+void HAL_RTC_MspDeInit(RTC_HandleTypeDef* hrtc)
+{
+
+  if(hrtc->Instance==RTC)
+  {
+  /* USER CODE BEGIN RTC_MspDeInit 0 */
+
+  /* USER CODE END RTC_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_RTC_DISABLE();
+  /* USER CODE BEGIN RTC_MspDeInit 1 */
+
+  /* USER CODE END RTC_MspDeInit 1 */
+  }
+
+}
+
+void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
+{
+
+  if(htim_base->Instance==TIM5)
+  {
+  /* USER CODE BEGIN TIM5_MspInit 0 */
+
+  /* USER CODE END TIM5_MspInit 0 */
+    /* Peripheral clock enable */
+    __HAL_RCC_TIM5_CLK_ENABLE();
+    /* TIM5 interrupt Init */
+    HAL_NVIC_SetPriority(TIM5_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(TIM5_IRQn);
+  /* USER CODE BEGIN TIM5_MspInit 1 */
+
+  /* USER CODE END TIM5_MspInit 1 */
+  }
+
+}
+
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim)
+{
+
+  GPIO_InitTypeDef GPIO_InitStruct;
+  if(htim->Instance==TIM5)
+  {
+  /* USER CODE BEGIN TIM5_MspPostInit 0 */
+
+  /* USER CODE END TIM5_MspPostInit 0 */
+  
+    /**TIM5 GPIO Configuration    
+    PF9     ------> TIM5_CH4 
+    */
+    GPIO_InitStruct.Pin = BEEP_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF2_TIM5;
+    HAL_GPIO_Init(BEEP_GPIO_Port, &GPIO_InitStruct);
+
+  /* USER CODE BEGIN TIM5_MspPostInit 1 */
+
+  /* USER CODE END TIM5_MspPostInit 1 */
+  }
+
+}
+
+void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
+{
+
+  if(htim_base->Instance==TIM5)
+  {
+  /* USER CODE BEGIN TIM5_MspDeInit 0 */
+
+  /* USER CODE END TIM5_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_TIM5_CLK_DISABLE();
+
+    /* TIM5 interrupt DeInit */
+    HAL_NVIC_DisableIRQ(TIM5_IRQn);
+  /* USER CODE BEGIN TIM5_MspDeInit 1 */
+
+  /* USER CODE END TIM5_MspDeInit 1 */
   }
 
 }

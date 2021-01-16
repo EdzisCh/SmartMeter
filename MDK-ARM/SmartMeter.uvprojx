@@ -427,6 +427,16 @@
               <FileType>5</FileType>
               <FilePath>..\Inc\lcd.h</FilePath>
             </File>
+            <File>
+              <FileName>RTC.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Inc\RTC.h</FilePath>
+            </File>
+            <File>
+              <FileName>RTC.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\RTC.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -521,6 +531,21 @@
               <FileName>stm32l4xx_hal_cortex.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_cortex.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32l4xx_hal_rtc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\STM32L4xx_HAL_Driver\Src\stm32l4xx_hal_rtc.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32l4xx_hal_rtc_ex.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\STM32L4xx_HAL_Driver\Src\stm32l4xx_hal_rtc_ex.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32l4xx_hal_qspi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Drivers\STM32L4xx_HAL_Driver\Src\stm32l4xx_hal_qspi.c</FilePath>
             </File>
           </Files>
         </Group>

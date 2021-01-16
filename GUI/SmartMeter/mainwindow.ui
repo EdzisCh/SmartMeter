@@ -14,7 +14,7 @@
    <string>Simple Terminal</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -27,7 +27,7 @@
      <item>
       <widget class="QPushButton" name="freqBtn">
        <property name="text">
-        <string>Frequacy</string>
+        <string>Frequency</string>
        </property>
       </widget>
      </item>
