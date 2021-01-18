@@ -5,6 +5,9 @@
 
 extern RTC_HandleTypeDef hrtc;
 
-uint8_t rtc_get_timestamp( RTC_TimeTypeDef *time );
+uint64_t rtc_get_timestamp( void );
+
+void rtc_set_time( void );
+void rtc_set_date( void );
 
 #endif
