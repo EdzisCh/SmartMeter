@@ -437,6 +437,26 @@
               <FileType>1</FileType>
               <FilePath>..\Src\RTC.c</FilePath>
             </File>
+            <File>
+              <FileName>event_handler.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\event_handler.c</FilePath>
+            </File>
+            <File>
+              <FileName>event_handler.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Inc\event_handler.h</FilePath>
+            </File>
+            <File>
+              <FileName>mem_handler.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Inc\mem_handler.h</FilePath>
+            </File>
+            <File>
+              <FileName>mem_handler.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\mem_handler.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

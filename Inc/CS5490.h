@@ -25,6 +25,11 @@
 #define INSTRUCTION_BYTE 0xC0
 #define CALIBRATION_BYTE 0x20
 
+
+	/**
+	! Структура измерителя
+	
+	*/
 typedef struct CS5490
 {
 	UART_HandleTypeDef *cs5490_huart;

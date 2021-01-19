@@ -1,52 +1,11 @@
-
-/**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  ** This notice applies to any and all portions of this file
-  * that are not between comment pairs USER CODE BEGIN and
-  * USER CODE END. Other portions of this file, whether 
-  * inserted by the user or by software development tools
-  * are owned by their respective copyright owners.
-  *
-  * COPYRIGHT(c) 2021 STMicroelectronics
-  *
-  * Redistribution and use in source and binary forms, with or without modification,
-  * are permitted provided that the following conditions are met:
-  *   1. Redistributions of source code must retain the above copyright notice,
-  *      this list of conditions and the following disclaimer.
-  *   2. Redistributions in binary form must reproduce the above copyright notice,
-  *      this list of conditions and the following disclaimer in the documentation
-  *      and/or other materials provided with the distribution.
-  *   3. Neither the name of STMicroelectronics nor the names of its contributors
-  *      may be used to endorse or promote products derived from this software
-  *      without specific prior written permission.
-  *
-  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
-  ******************************************************************************
-  */
-/* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32l4xx_hal.h"
 
-/* USER CODE BEGIN Includes */
 #include "lcd.h"
 #include "RTC.h"
 #include "CS5490.h"
-/* USER CODE END Includes */
+#include "event_handler.h"
 
-/* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c2;
 I2C_HandleTypeDef hi2c3;
 
@@ -59,12 +18,6 @@ TIM_HandleTypeDef htim5;
 UART_HandleTypeDef huart5;
 UART_HandleTypeDef huart1;
 
-/* USER CODE BEGIN PV */
-/* Private variables ---------------------------------------------------------*/
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C2_Init(void);
@@ -76,99 +29,56 @@ static void MX_RTC_Init(void);
 static void MX_TIM5_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-                                
 
-/* USER CODE BEGIN PFP */
-/* Private function prototypes -----------------------------------------------*/
 
-/* USER CODE END PFP */
-
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
-/**
-  * @brief  The application entry point.
-  *
-  * @retval None
+  /**
+  ! Отправная точка
+  
   */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
-	
-  /* USER CODE END 1 */
 
-  /* MCU Configuration----------------------------------------------------------*/
+	HAL_Init();
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+	SystemClock_Config();
 
-  /* USER CODE BEGIN Init */
+	MX_GPIO_Init();
+	MX_I2C2_Init();
+	MX_UART5_Init();
+	MX_USART1_UART_Init();
+	MX_I2C3_Init();
+	MX_QUADSPI_Init();
+	MX_RTC_Init();
+	MX_TIM5_Init();
 
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
-  SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_I2C2_Init();
-  MX_UART5_Init();
-  MX_USART1_UART_Init();
-  MX_I2C3_Init();
-  MX_QUADSPI_Init();
-  MX_RTC_Init();
-  MX_TIM5_Init();
-  /* USER CODE BEGIN 2 */
 	HAL_GPIO_WritePin(LED_BL_GPIO_Port, LED_BL_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(LED_ACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(LED_REACT_GPIO_Port, LED_REACT_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_SET);
 	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);
-	
+
 	display_init();
-	
+
 	display_clear();
-	
+
 	HAL_Delay(100);
-	
+
 	display_all_data_write();
 	rtc_set_init_dateTime();
-	uint8_t i = 0x00;
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-  /* USER CODE END WHILE */
-
-	i++;
-	rtc_set_hours(i);
-	uint8_t times = rtc_get_seconds();
-
-//	uint8_t transmitBuffer[8];
-
-//	transmitBuffer[0] = 0x000000FF & (times >> 56);
-//	transmitBuffer[1] = 0x000000FF & (times >> 48);
-//	transmitBuffer[2] = 0x000000FF & (times >> 40);
-//	transmitBuffer[3] = 0x000000FF & (times >> 32);
-//	transmitBuffer[4] = 0x000000FF & (times >> 24);
-//	transmitBuffer[5] = 0x000000FF & (times >> 16);
-//	transmitBuffer[6] = 0x000000FF & (times >> 8);
-//	transmitBuffer[7] = 0x000000FF & (times); 
-
-	HAL_UART_Transmit(&huart5,  &times, 1, 0xFF);
-	HAL_Delay(1000);
-  /* USER CODE BEGIN 3 */
-
-  }
-  /* USER CODE END 3 */
-
+	GPIO_PinState key;
+	
+	while (1)
+	{
+		key = HAL_GPIO_ReadPin(KEY_1_GPIO_Port, KEY_1_Pin);
+		if ( key == GPIO_PIN_RESET )
+		{
+			event_handler_beep_on();
+			HAL_GPIO_WritePin(LED_ACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_SET);
+		}
+		event_handler_beep_off();
+		HAL_GPIO_WritePin(LED_ACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_RESET);
+	}
+  
 }
 
 /**
@@ -342,19 +252,9 @@ static void MX_QUADSPI_Init(void)
 static void MX_RTC_Init(void)
 {
 
-  /* USER CODE BEGIN RTC_Init 0 */
-
-  /* USER CODE END RTC_Init 0 */
-
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
 
-  /* USER CODE BEGIN RTC_Init 1 */
-
-  /* USER CODE END RTC_Init 1 */
-
-    /**Initialize RTC Only 
-    */
   hrtc.Instance = RTC;
   hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
   hrtc.Init.AsynchPrediv = 127;
@@ -368,8 +268,6 @@ static void MX_RTC_Init(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-    /**Initialize RTC and set the Time and Date 
-    */
   sTime.Hours = 0x10;
   sTime.Minutes = 0x44;
   sTime.Seconds = 0x0;
@@ -401,9 +299,9 @@ static void MX_TIM5_Init(void)
   TIM_OC_InitTypeDef sConfigOC;
 
   htim5.Instance = TIM5;
-  htim5.Init.Prescaler = 0;
+  htim5.Init.Prescaler = 4;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim5.Init.Period = 65535;
+  htim5.Init.Period = 50;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
@@ -515,19 +413,19 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : KEY_3_Pin KEY_1_Pin */
   GPIO_InitStruct.Pin = KEY_3_Pin|KEY_1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pin : KEY_2_Pin */
   GPIO_InitStruct.Pin = KEY_2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(KEY_2_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : TAMPER2_Pin TAMPER1_Pin */
   GPIO_InitStruct.Pin = TAMPER2_Pin|TAMPER1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : RX_TX_485_Pin LED_REACT_Pin LED_ACT_Pin */
