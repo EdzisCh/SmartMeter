@@ -137,7 +137,8 @@ int main(void)
 	HAL_Delay(100);
 	
 	display_all_data_write();
-	
+	rtc_set_init_dateTime();
+	uint8_t i = 0x00;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -145,25 +146,24 @@ int main(void)
   while (1)
   {
   /* USER CODE END WHILE */
-	  
-	uint64_t times = rtc_get_timestamp();
 
-	uint8_t transmitBuffer[8];
+	i++;
+	rtc_set_hours(i);
+	uint8_t times = rtc_get_seconds();
 
-	transmitBuffer[0] = 0x000000FF & (times >> 56);
-	transmitBuffer[1] = 0x000000FF & (times >> 48);
-	transmitBuffer[2] = 0x000000FF & (times >> 40);
-	transmitBuffer[3] = 0x000000FF & (times >> 32);
-	transmitBuffer[4] = 0x000000FF & (times >> 24);
-	transmitBuffer[5] = 0x000000FF & (times >> 16);
-	transmitBuffer[6] = 0x000000FF & (times >> 8);
-	transmitBuffer[7] = 0x000000FF & (times); 
+//	uint8_t transmitBuffer[8];
 
-	HAL_UART_Transmit(&huart5,  transmitBuffer, 8, 0xFF);
+//	transmitBuffer[0] = 0x000000FF & (times >> 56);
+//	transmitBuffer[1] = 0x000000FF & (times >> 48);
+//	transmitBuffer[2] = 0x000000FF & (times >> 40);
+//	transmitBuffer[3] = 0x000000FF & (times >> 32);
+//	transmitBuffer[4] = 0x000000FF & (times >> 24);
+//	transmitBuffer[5] = 0x000000FF & (times >> 16);
+//	transmitBuffer[6] = 0x000000FF & (times >> 8);
+//	transmitBuffer[7] = 0x000000FF & (times); 
+
+	HAL_UART_Transmit(&huart5,  &times, 1, 0xFF);
 	HAL_Delay(1000);
-	  
-	  //00 13 02 00 00 15 01 01
-	  //00 19 48 00 00 21 01 01
   /* USER CODE BEGIN 3 */
 
   }
@@ -370,8 +370,8 @@ static void MX_RTC_Init(void)
 
     /**Initialize RTC and set the Time and Date 
     */
-  sTime.Hours = 0x19;
-  sTime.Minutes = 0x48;
+  sTime.Hours = 0x10;
+  sTime.Minutes = 0x44;
   sTime.Seconds = 0x0;
   sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
   sTime.StoreOperation = RTC_STOREOPERATION_RESET;
@@ -382,7 +382,7 @@ static void MX_RTC_Init(void)
 
   sDate.WeekDay = RTC_WEEKDAY_MONDAY;
   sDate.Month = RTC_MONTH_JANUARY;
-  sDate.Date = 0x18;
+  sDate.Date = 0x19;
   sDate.Year = 0x21;
 
   if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
