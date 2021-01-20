@@ -68,13 +68,22 @@ int main(void)
 	display_all_data_write();
 	rtc_set_init_dateTime();
 	
-//	CS5490 cs;
-//	cs.cs5490_huart = &huart1;
-//	cs.cs5490_MCLK = MCLK_DEFAULT_VALUE;
+	CS5490 cs;
+	cs.cs5490_huart = &huart1;
+	cs.cs5490_MCLK = MCLK_DEFAULT_VALUE;
+	uint32_t time = cs5490_getTime( &cs );
+
 //	data data;
 
+	rs485_send_message( (uint8_t *) &time, 4);
+
+	HAL_Delay(1000);
+	rs485_send_message( &(cs.cs5490_data[2]), 1);
+	rs485_send_message( &(cs.cs5490_data[1]), 1);
+	rs485_send_message( &(cs.cs5490_data[0]), 1);
 	while (1)
 	{
+
 	}
   
 }
@@ -364,7 +373,7 @@ static void MX_USART1_UART_Init(void)
 {
 
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 2400;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;

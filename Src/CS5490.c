@@ -39,7 +39,7 @@ void cs5490_instruct( CS5490 *chip, int value )
 
 uint32_t cs5490_concatData( CS5490 *chip )
 {
-	uint32_t output;
+	uint32_t output = 0x00;
 	output = (output + chip->cs5490_data[2]) << 8;
 	output = (output + chip->cs5490_data[1]) << 8;
 	output = output + chip->cs5490_data[0];
