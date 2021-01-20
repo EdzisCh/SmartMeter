@@ -42,14 +42,14 @@ typedef struct total_energy_register
 	*/
 typedef struct tarrif_accumulator
 {
-	
+	uint32_t temp;
 } tarrif_accumulator;
 
-void set_data();
-void set_total_energy_register();
-void set_tarrif_accumulator();
-void get_data();
-void get_total_energy_register();
-void get_tarrif_accumulator();
+void mem_handler_set_data( data *data, uint32_t P, uint32_t Q, uint32_t S, uint32_t cosPhi, uint32_t I, uint32_t U, uint32_t freq );
+void mem_handler_set_total_energy_register();
+void mem_handler_set_tarrif_accumulator();
+void mem_handler_get_data();
+void mem_handler_get_total_energy_register();
+void mem_handler_get_tarrif_accumulator();
 
 #endif

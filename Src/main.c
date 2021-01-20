@@ -5,6 +5,8 @@
 #include "RTC.h"
 #include "CS5490.h"
 #include "event_handler.h"
+#include "mem_handler.h"
+#include "RS485.h"
 
 I2C_HandleTypeDef hi2c2;
 I2C_HandleTypeDef hi2c3;
@@ -65,18 +67,14 @@ int main(void)
 
 	display_all_data_write();
 	rtc_set_init_dateTime();
-	GPIO_PinState key;
 	
+//	CS5490 cs;
+//	cs.cs5490_huart = &huart1;
+//	cs.cs5490_MCLK = MCLK_DEFAULT_VALUE;
+//	data data;
+
 	while (1)
 	{
-		key = HAL_GPIO_ReadPin(KEY_1_GPIO_Port, KEY_1_Pin);
-		if ( key == GPIO_PIN_RESET )
-		{
-			event_handler_beep_on();
-			HAL_GPIO_WritePin(LED_ACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_SET);
-		}
-		event_handler_beep_off();
-		HAL_GPIO_WritePin(LED_ACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_RESET);
 	}
   
 }
@@ -299,9 +297,9 @@ static void MX_TIM5_Init(void)
   TIM_OC_InitTypeDef sConfigOC;
 
   htim5.Instance = TIM5;
-  htim5.Init.Prescaler = 4;
+  htim5.Init.Prescaler = 20000;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim5.Init.Period = 50;
+  htim5.Init.Period = 2;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
@@ -444,24 +442,11 @@ static void MX_GPIO_Init(void)
 
 }
 
-/* USER CODE BEGIN 4 */
-
-/* USER CODE END 4 */
-
-/**
-  * @brief  This function is executed in case of error occurrence.
-  * @param  file: The file name as string.
-  * @param  line: The line in file as a number.
-  * @retval None
-  */
 void _Error_Handler(char *file, int line)
 {
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
   while(1)
   {
   }
-  /* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT
@@ -480,13 +465,3 @@ void assert_failed(uint8_t* file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
