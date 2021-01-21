@@ -7,6 +7,7 @@
 #include "event_handler.h"
 #include "mem_handler.h"
 #include "RS485.h"
+#include "stdio.h"
 
 I2C_HandleTypeDef hi2c2;
 I2C_HandleTypeDef hi2c3;
@@ -71,19 +72,45 @@ int main(void)
 	CS5490 cs;
 	cs.cs5490_huart = &huart1;
 	cs.cs5490_MCLK = MCLK_DEFAULT_VALUE;
-	uint32_t time = cs5490_getTime( &cs );
+	float temp = 0.0;
+	
+	cs5490_init( &cs, 1 );
 
-//	data data;
-
-	rs485_send_message( (uint8_t *) &time, 4);
-
-	HAL_Delay(1000);
-	rs485_send_message( &(cs.cs5490_data[2]), 1);
-	rs485_send_message( &(cs.cs5490_data[1]), 1);
-	rs485_send_message( &(cs.cs5490_data[0]), 1);
 	while (1)
 	{
-
+		cs5490_get_V(&cs);
+		
+		HAL_Delay(500);
+		temp = cs5490_convert_to_double( &cs, 23, 0x01 );
+		
+		printf("V=%f \r\n", temp);
+		
+		cs5490_set_DC_Offset_V( &cs, 0 );
+		
+		cs5490_get_V(&cs);
+		HAL_Delay(50);
+		temp = cs5490_convert_to_double( &cs, 23, 0x01 );
+		
+		printf("After offset V=%f \r\n", temp);
+		HAL_Delay(50);
+		temp = cs5490_get_DC_Offset_V( &cs );
+		
+		printf("DC offset=%f \r\n", temp);
+		
+		
+		cs5490_calibrate( &cs, CALLIBRATION_DC_OFFSET_TYPE, CHANNEL_VOLTAGE );
+		
+		cs5490_get_V(&cs);
+		
+		temp = cs5490_convert_to_double( &cs, 23, 0x01 );
+		HAL_Delay(50);
+		printf("After offset cal V=%f \r\n", temp);
+		
+		temp = cs5490_get_DC_Offset_V( &cs );
+		HAL_Delay(50);
+		printf("DC offset=%f \r\n", temp);
+		
+		while(1);
 	}
   
 }

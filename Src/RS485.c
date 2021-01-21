@@ -2,18 +2,22 @@
 
 	/**
 	! Отправка одного байта по  RS485. После передачи пин RX/TX_485 
-	  устанавливается в 0
+	  устанавливается в 0. Используется как senchar(char ch)
 	*/
-void rs485_send_byte( uint8_t byte )
+int rs485_send_byte( uint8_t byte )
 {
+	int output;
+	
 	if (HAL_GPIO_ReadPin(RX_TX_485_GPIO_Port, RX_TX_485_Pin))
 	{
-		HAL_UART_Transmit(&huart5, &byte, 1, 1000);
+		output = HAL_UART_Transmit(&huart5, &byte, 1, 1000);
 	} else {
 		HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_SET);
-		HAL_UART_Transmit(&huart5, &byte, 1, 1000);
+		output = HAL_UART_Transmit(&huart5, &byte, 1, 1000);
 	}
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
+	
+	return output;
 }
 
 	/**

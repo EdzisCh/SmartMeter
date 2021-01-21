@@ -467,6 +467,11 @@
               <FileType>5</FileType>
               <FilePath>..\Inc\RS485.h</FilePath>
             </File>
+            <File>
+              <FileName>Retarget.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\Retarget.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
