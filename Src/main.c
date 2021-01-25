@@ -20,6 +20,8 @@ TIM_HandleTypeDef htim5;
 
 UART_HandleTypeDef huart5;
 UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart2;
+UART_HandleTypeDef huart3;
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
@@ -30,30 +32,30 @@ static void MX_I2C3_Init(void);
 static void MX_QUADSPI_Init(void);
 static void MX_RTC_Init(void);
 static void MX_TIM5_Init(void);
+static void MX_USART2_UART_Init(void);
+static void MX_USART3_UART_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+ 
 
-
-  /**
-  ! Отправная точка
-  
-  */
 int main(void)
 {
+ 
+  HAL_Init();
 
-	HAL_Init();
+  SystemClock_Config();
 
-	SystemClock_Config();
-
-	MX_GPIO_Init();
-	MX_I2C2_Init();
-	MX_UART5_Init();
-	MX_USART1_UART_Init();
-	MX_I2C3_Init();
-	MX_QUADSPI_Init();
-	MX_RTC_Init();
-	MX_TIM5_Init();
-
+  MX_GPIO_Init();
+  MX_I2C2_Init();
+  MX_UART5_Init();
+  MX_USART1_UART_Init();
+  MX_I2C3_Init();
+  MX_QUADSPI_Init();
+  MX_RTC_Init();
+  MX_TIM5_Init();
+  MX_USART2_UART_Init();
+  MX_USART3_UART_Init();
+  
 	HAL_GPIO_WritePin(LED_BL_GPIO_Port, LED_BL_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(LED_ACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(LED_REACT_GPIO_Port, LED_REACT_Pin, GPIO_PIN_RESET);
@@ -68,51 +70,13 @@ int main(void)
 
 	display_all_data_write();
 	rtc_set_init_dateTime();
-	
-	CS5490 cs;
-	cs.cs5490_huart = &huart1;
-	cs.cs5490_MCLK = MCLK_DEFAULT_VALUE;
-	float temp = 0.0;
-	
-	cs5490_init( &cs, 1 );
 
-	while (1)
-	{
-		cs5490_get_V(&cs);
+  while (1)
+  {
+	
 		
-		HAL_Delay(500);
-		temp = cs5490_convert_to_double( &cs, 23, 0x01 );
-		
-		printf("V=%f \r\n", temp);
-		
-		cs5490_set_DC_Offset_V( &cs, 0 );
-		
-		cs5490_get_V(&cs);
-		HAL_Delay(50);
-		temp = cs5490_convert_to_double( &cs, 23, 0x01 );
-		
-		printf("After offset V=%f \r\n", temp);
-		HAL_Delay(50);
-		temp = cs5490_get_DC_Offset_V( &cs );
-		
-		printf("DC offset=%f \r\n", temp);
-		
-		
-		cs5490_calibrate( &cs, CALLIBRATION_DC_OFFSET_TYPE, CHANNEL_VOLTAGE );
-		
-		cs5490_get_V(&cs);
-		
-		temp = cs5490_convert_to_double( &cs, 23, 0x01 );
-		HAL_Delay(50);
-		printf("After offset cal V=%f \r\n", temp);
-		
-		temp = cs5490_get_DC_Offset_V( &cs );
-		HAL_Delay(50);
-		printf("DC offset=%f \r\n", temp);
-		
-		while(1);
-	}
-  
+  }
+
 }
 
 /**
@@ -164,9 +128,12 @@ void SystemClock_Config(void)
   }
 
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_USART1
+                              |RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_USART3
                               |RCC_PERIPHCLK_UART5|RCC_PERIPHCLK_I2C2
                               |RCC_PERIPHCLK_I2C3;
   PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
+  PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
+  PeriphClkInit.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
   PeriphClkInit.Uart5ClockSelection = RCC_UART5CLKSOURCE_PCLK1;
   PeriphClkInit.I2c2ClockSelection = RCC_I2C2CLKSOURCE_PCLK1;
   PeriphClkInit.I2c3ClockSelection = RCC_I2C3CLKSOURCE_PCLK1;
@@ -286,9 +253,19 @@ static void MX_QUADSPI_Init(void)
 static void MX_RTC_Init(void)
 {
 
+  /* USER CODE BEGIN RTC_Init 0 */
+
+  /* USER CODE END RTC_Init 0 */
+
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
 
+  /* USER CODE BEGIN RTC_Init 1 */
+
+  /* USER CODE END RTC_Init 1 */
+
+    /**Initialize RTC Only 
+    */
   hrtc.Instance = RTC;
   hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
   hrtc.Init.AsynchPrediv = 127;
@@ -302,8 +279,10 @@ static void MX_RTC_Init(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  sTime.Hours = 0x10;
-  sTime.Minutes = 0x44;
+    /**Initialize RTC and set the Time and Date 
+    */
+  sTime.Hours = 0x0;
+  sTime.Minutes = 0x0;
   sTime.Seconds = 0x0;
   sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
   sTime.StoreOperation = RTC_STOREOPERATION_RESET;
@@ -314,8 +293,8 @@ static void MX_RTC_Init(void)
 
   sDate.WeekDay = RTC_WEEKDAY_MONDAY;
   sDate.Month = RTC_MONTH_JANUARY;
-  sDate.Date = 0x19;
-  sDate.Year = 0x21;
+  sDate.Date = 0x1;
+  sDate.Year = 0x0;
 
   if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
   {
@@ -333,7 +312,7 @@ static void MX_TIM5_Init(void)
   TIM_OC_InitTypeDef sConfigOC;
 
   htim5.Instance = TIM5;
-  htim5.Init.Prescaler = 20000;
+  htim5.Init.Prescaler = 2000;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim5.Init.Period = 2;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -416,6 +395,48 @@ static void MX_USART1_UART_Init(void)
 
 }
 
+/* USART2 init function */
+static void MX_USART2_UART_Init(void)
+{
+
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 2400;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+}
+
+/* USART3 init function */
+static void MX_USART3_UART_Init(void)
+{
+
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 2400;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+}
+
 /** Configure pins as 
         * Analog 
         * Input 
@@ -434,9 +455,9 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOG_CLK_ENABLE();
   HAL_PWREx_EnableVddIO2();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, RX_TX_485_Pin|LED_REACT_Pin|LED_ACT_Pin, GPIO_PIN_RESET);
@@ -447,19 +468,19 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : KEY_3_Pin KEY_1_Pin */
   GPIO_InitStruct.Pin = KEY_3_Pin|KEY_1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pin : KEY_2_Pin */
   GPIO_InitStruct.Pin = KEY_2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(KEY_2_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : TAMPER2_Pin TAMPER1_Pin */
   GPIO_InitStruct.Pin = TAMPER2_Pin|TAMPER1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : RX_TX_485_Pin LED_REACT_Pin LED_ACT_Pin */
@@ -478,11 +499,24 @@ static void MX_GPIO_Init(void)
 
 }
 
+/* USER CODE BEGIN 4 */
+
+/* USER CODE END 4 */
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @param  file: The file name as string.
+  * @param  line: The line in file as a number.
+  * @retval None
+  */
 void _Error_Handler(char *file, int line)
 {
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
   while(1)
   {
   }
+  /* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT
@@ -501,3 +535,13 @@ void assert_failed(uint8_t* file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

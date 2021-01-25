@@ -34,6 +34,23 @@ uint8_t display_init( void );
 uint8_t display_all_data_write( void );
 uint8_t display_clear( void );
 uint8_t display_data_write( uint16_t address, uint8_t *data, uint8_t sizeOfData );
+uint8_t display_byte_read( uint16_t address );
 
+void display_L1( void );
+void display_L2( void );
+void display_L3( void );
+void display_R1( void );
+void display_R2( void );
+void display_P( void );
+void display_N( void );
+void display_battery( void );
+void display_ExMark( void );
+void display_lock_1( void );
+void display_lock_2( void );
+void display_level( uint8_t level );
+void display_WIFI( void );
+void display_GR( void );
+void display_PR( void );
+void display_T( void );
 
 #endif
