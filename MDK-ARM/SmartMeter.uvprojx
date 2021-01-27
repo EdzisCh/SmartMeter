@@ -472,6 +472,26 @@
               <FileType>1</FileType>
               <FilePath>..\Src\Retarget.c</FilePath>
             </File>
+            <File>
+              <FileName>M24M01.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\M24M01.c</FilePath>
+            </File>
+            <File>
+              <FileName>S25FL.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\S25FL.c</FilePath>
+            </File>
+            <File>
+              <FileName>M24M01.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Inc\M24M01.h</FilePath>
+            </File>
+            <File>
+              <FileName>S25FL.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Inc\S25FL.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

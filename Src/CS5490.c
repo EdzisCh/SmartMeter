@@ -161,6 +161,10 @@ double cs5490_convert_to_double( CS5490 *chip, int LSB_pow, int MSB_option )
 	return output;
 }
 
+/**
+!Конвертация в двоичный формат для последующей отправки значения в измеритель 
+
+*/
 uint32_t cs5490_convert_to_binary(int LSB_pow, int MSB_option, double input)
 {
 
@@ -198,6 +202,10 @@ uint32_t cs5490_convert_to_binary(int LSB_pow, int MSB_option, double input)
 
 //===================================================================================
 
+/**
+!Функции, выполняющие различные инструкции
+
+*/
 void cs5490_reset( CS5490 *chip )
 {
 	cs5490_instruct(chip, 1);
@@ -229,6 +237,10 @@ void cs5490_halt_conversation( CS5490 *chip )
 }
 
 //===================================================================================
+/**
+!Функции для калибровок: Gain
+
+*/
 
 double cs5490_get_gain_V( CS5490 *chip )
 {
@@ -255,6 +267,10 @@ void cs5490_set_gain_I( CS5490 *chip, double value ){
 
 //===================================================================================
 
+/**
+!Функции для калибровок: AC offset, DC offset, Temperature
+
+*/
 float cs5490_get_DС_Offset_V( CS5490 *chip )
 {
 	cs5490_read(chip, 16, 34);
@@ -304,6 +320,10 @@ void cs5490_set_Offset_T( CS5490 *chip, double value ){
 
 //===================================================================================
 
+/**
+!Функции получения измерений и преобразование в нормальный вид 
+
+*/
 double cs5490_get_I( CS5490 *chip )
 {
 	//Page 16, Address 2
@@ -440,8 +460,10 @@ uint8_t cs5490_first_calibrate( CS5490 *chip, uint8_t *calibrationData )
 	temp |= 0x00000A;
 	cs5490_write(chip, 16, 0, temp);
 	
+	#define SCALE 50/2*4194304
+	
 	//5 set scale reg
-	cs5490_write(chip, 18, 63, SCALE_REGISTER_VALUE);
+	cs5490_write(chip, 18, 63, SCALE);
 	
 	//6 start cont. conv.
 	cs5490_continious_conversation(chip);

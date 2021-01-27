@@ -36,6 +36,8 @@ uint8_t display_clear( void );
 uint8_t display_data_write( uint16_t address, uint8_t *data, uint8_t sizeOfData );
 uint8_t display_byte_read( uint16_t address );
 
+void display_main_numbers(uint32_t number);
+
 void display_L1( void );
 void display_L2( void );
 void display_L3( void );

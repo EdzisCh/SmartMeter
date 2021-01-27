@@ -97,6 +97,17 @@ uint8_t display_byte_read( uint16_t address )
 	return byte;
 }
 
+/**
+! Вывод числа на основное поле дисплее (8 сегментов)
+*/
+void display_main_numbers(uint32_t number)
+{
+	uint8_t value_1 = 0xD0;
+	uint8_t value_2 = 0x07;
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 0x01, 1, &value_1, 1, 255);
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 0x02, 1, &value_2, 1, 255);
+}
+
 //===================================================================================
 
 // Далее ряд функций для включения определенных элементов ЖКИ

@@ -8,6 +8,7 @@
 #include "mem_handler.h"
 #include "RS485.h"
 #include "stdio.h"
+#include "M24M01.h"
 
 I2C_HandleTypeDef hi2c2;
 I2C_HandleTypeDef hi2c3;
@@ -41,20 +42,20 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 int main(void)
 {
  
-  HAL_Init();
+	HAL_Init();
 
-  SystemClock_Config();
+	SystemClock_Config();
 
-  MX_GPIO_Init();
-  MX_I2C2_Init();
-  MX_UART5_Init();
-  MX_USART1_UART_Init();
-  MX_I2C3_Init();
-  MX_QUADSPI_Init();
-  MX_RTC_Init();
-  MX_TIM5_Init();
-  MX_USART2_UART_Init();
-  MX_USART3_UART_Init();
+	MX_GPIO_Init();
+	MX_I2C2_Init();
+	MX_UART5_Init();
+	MX_USART1_UART_Init();
+	MX_I2C3_Init();
+	MX_QUADSPI_Init();
+	MX_RTC_Init();
+	MX_TIM5_Init();
+	MX_USART2_UART_Init();
+	MX_USART3_UART_Init();
   
 	printf("--START--\r\n\n");
 	HAL_GPIO_WritePin(LED_BL_GPIO_Port, LED_BL_Pin, GPIO_PIN_SET);
@@ -76,51 +77,11 @@ int main(void)
 	chip.cs5490_huart = &huart1;
 	
 	cs5490_reset(&chip);
-	//cs5490_init(&chip, 0x01);
-//	//1
-//	cs5490_reset(&chip);
-//	//2
-//	if(cs5490_get_RegChk(&chip) == 0)
-//	{
-//		printf("regcheck error");
-//	}
-//	//2.1 HPF enable
 
-//	//4
-//	
-//	//5
-//	cs5490_continious_conversation(&chip);
-//	HAL_Delay(2000);
-//	//6 stop continious conv
-//	cs5490_instruct(&chip, 0xD8);
-//	//7 read RMS and confirm
-//	
-//	//8
-//	cs5490_read(&chip, 0, 23);
-//	uint32_t DRDY = cs5490_concatData(&chip);
-//	DRDY |= 0x800000;
-//	cs5490_write(&chip, 0, 23, DRDY);
-//	
-//	//9 send AC gain calibration command
-//	cs5490_instruct(&chip, 0xFE);
-//	
-//	//10 cont conv
-//	cs5490_continious_conversation(&chip);
-//	
-//	//11
-//	//prinf Vgain,Igain,IACoff,Poff,Qoff,PC, and register checksum
-//1E
-//4C
-//41
-//00 
-	uint8_t *data;
   while (1)
   {
-	  cs5490_first_calibrate(&chip, data);
-	  
-	  HAL_Delay(100);
-	  
-	  rs485_send_message(data, 10);
+	  display_clear();
+	 display_main_numbers(1);
 	  
 	  while(1);
   }

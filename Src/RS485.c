@@ -9,7 +9,7 @@ int rs485_send_byte( uint8_t byte )
 	int output;
 	
 	//Задержка для предотвращения потерь 
-	//HAL_Delay(100);
+	HAL_Delay(10);
 	
 	if (HAL_GPIO_ReadPin(RX_TX_485_GPIO_Port, RX_TX_485_Pin))
 	{
