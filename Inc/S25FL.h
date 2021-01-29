@@ -22,11 +22,13 @@
 #define WIP_MASK 0x01
 
 extern QSPI_HandleTypeDef hqspi;
+QSPI_CommandTypeDef command;
 
 void s25fl_init( void );
 void s25fl_make_command( void );
 uint8_t* s25fl_send_command( uint8_t command );
-uint8_t s25fl_send_to_mem( void );
-uint8_t s25fl_get_from_mem( void );
+uint8_t s25fl_send_to_mem( uint8_t address, uint8_t *data, uint8_t size );
+uint8_t s25fl_get_from_mem( uint8_t address, uint8_t *data );
+uint8_t s25fl_send_write_enable( void );
 
 #endif

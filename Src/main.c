@@ -9,6 +9,7 @@
 #include "RS485.h"
 #include "stdio.h"
 #include "M24M01.h"
+#include "S25FL.h"
 
 I2C_HandleTypeDef hi2c2;
 I2C_HandleTypeDef hi2c3;
@@ -77,24 +78,10 @@ int main(void)
 	chip.cs5490_huart = &huart1;
 	
 	cs5490_reset(&chip);
+	QSPI_CommandTypeDef sCommand;
 
   while (1)
   {
-	  display_clear();
-	 display_main_numbers(1);
-	  
-	  uint8_t tx_data[20];
-	  uint8_t rx_data[20];
-	  uint8_t status = 0x00;
-	  
-	  for(uint8_t i = 0; i < 20; i++)
-	  {
-		  tx_data[i] = i;
-		  rx_data[i] = 0x00;
-	  }
-	  
-	  rx_data[1] = 255;
-	  
 	  
 	  
 	  while(1);
@@ -259,11 +246,11 @@ static void MX_QUADSPI_Init(void)
 
   /* QUADSPI parameter configuration*/
   hqspi.Instance = QUADSPI;
-  hqspi.Init.ClockPrescaler = 255;
-  hqspi.Init.FifoThreshold = 1;
+  hqspi.Init.ClockPrescaler = 254;
+  hqspi.Init.FifoThreshold = 8;
   hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE;
-  hqspi.Init.FlashSize = 1;
-  hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE;
+  hqspi.Init.FlashSize = 31;
+  hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_8_CYCLE;
   hqspi.Init.ClockMode = QSPI_CLOCK_MODE_0;
   if (HAL_QSPI_Init(&hqspi) != HAL_OK)
   {
