@@ -11,6 +11,8 @@
 #include "M24M01.h"
 #include "S25FL.h"
 
+extern __IO uint32_t uwTick;
+
 I2C_HandleTypeDef hi2c2;
 I2C_HandleTypeDef hi2c3;
 
@@ -42,7 +44,6 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 int main(void)
 {
- 
 	HAL_Init();
 
 	SystemClock_Config();
@@ -58,11 +59,11 @@ int main(void)
 	MX_USART2_UART_Init();
 	MX_USART3_UART_Init();
   
-	printf("--START--\r\n\n");
+	printf("--START--\r\n");
 	HAL_GPIO_WritePin(LED_BL_GPIO_Port, LED_BL_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(LED_ACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(LED_REACT_GPIO_Port, LED_REACT_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
 	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);
 
 	display_init();
@@ -71,28 +72,30 @@ int main(void)
 
 	HAL_Delay(100);
 
-	display_all_data_write();
+	//display_all_data_write();
 	rtc_set_init_dateTime();
 
-	CS5490 chip;
-	chip.cs5490_huart = &huart1;
+	CS5490 chip_0;
+	chip_0.cs5490_huart = &huart1;
 	
-	cs5490_reset(&chip);
-	QSPI_CommandTypeDef sCommand;
-
+	chip_0.cs5490_read_OK = 0x01;
+	
+	uint8_t calibrationData[6];
+	
+	
   while (1)
   {
-	  
-	  
+	  full_callibration(&chip_0, calibrationData);
+ 
 	  while(1);
   }
 
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
+! System Clock Configuration
+
+*/
 void SystemClock_Config(void)
 {
 
@@ -263,16 +266,9 @@ static void MX_QUADSPI_Init(void)
 static void MX_RTC_Init(void)
 {
 
-  /* USER CODE BEGIN RTC_Init 0 */
-
-  /* USER CODE END RTC_Init 0 */
-
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
 
-  /* USER CODE BEGIN RTC_Init 1 */
-
-  /* USER CODE END RTC_Init 1 */
 
     /**Initialize RTC Only 
     */

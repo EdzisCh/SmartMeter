@@ -1,21 +1,24 @@
 #include "RTC.h"
 
+RTC_TimeTypeDef current_time;
+RTC_DateTypeDef current_date;
+
 	/**
 	!Установка первоночальной даты на 10:44:00 19.01.21
 	
 	*/
 void rtc_set_init_dateTime( void )
 {
-	current_time.Hours = 0x10;
-	current_time.Minutes = 0x44;
+	current_time.Hours = 0x16;
+	current_time.Minutes = 0x57;
 	current_time.Seconds = 0x0;
 	current_time.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
 	current_time.StoreOperation = RTC_STOREOPERATION_RESET;
 	HAL_RTC_SetTime(&hrtc, &current_time, RTC_FORMAT_BCD);
 
-	current_date.WeekDay = RTC_WEEKDAY_MONDAY;
-	current_date.Month = RTC_MONTH_JANUARY;
-	current_date.Date = 0x19;
+	current_date.WeekDay = RTC_WEEKDAY_THURSDAY;
+	current_date.Month = RTC_MONTH_FEBRUARY;
+	current_date.Date = 0x04;
 	current_date.Year = 0x21;
 
 	HAL_RTC_SetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
@@ -24,29 +27,29 @@ void rtc_set_init_dateTime( void )
 	/**
 	!Функция возвращает текущее время и дату в качестве идентификатора
 	в формате чч:мм:сс дд:мм:гг, при этом в байтах возвращаестя следующая
-	последовательность 00 ЧЧ ММ СС 00 ДД ММ ГГ, где 00 - разделители.
-	Пример: 00 19 48 00 00 21 01 01
+	последовательность 00 00 ЧЧ ММ СС ДД ММ ГГ, где 00 - старшие байты.
+	Пример: 00 00 19 48 00 21 01 01
 
 	*/
-uint64_t rtc_get_timestamp( void )
+void rtc_get_timestamp( uint32_t *timestamp )
 {
 	HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD);
     HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
 	
-    uint64_t timestamp = 0x00;
-  
-    timestamp = (timestamp + current_time.Hours) << 8;
-    timestamp = (timestamp + current_time.Minutes) << 8;
-    timestamp = (timestamp + current_time.Seconds) << 8;
+	uint32_t time = 0x00;
 	
-	//разделение времени и даты
-	timestamp = (timestamp + 0x00) << 8;
+    time = (time + current_time.Hours) << 8;
+    time = (time + current_time.Minutes) << 8;
+    time = time + current_time.Seconds;
 	
-    timestamp = (timestamp + current_date.Date) << 8;
-    timestamp = (timestamp + current_date.Month) << 8;
-    timestamp = timestamp + current_date.Year;
+	timestamp[0] = time;
+	time = 0x00;
+	
+    time = (time + current_date.Date) << 8;
+    time = (time + current_date.Month) << 8;
+    time = time + current_date.Year;
 
-    return timestamp;
+	timestamp[1] = time;
 }
 
 	/**
@@ -171,4 +174,4 @@ uint32_t rtc_get_date( void )
 uint32_t rtc_get_time( void )
 {
 }
-	
+

@@ -1,4 +1,5 @@
 #include "lcd.h"
+#include "stdio.h"
 
 	/**
 	!Инициализация дисплея. Установка значений для Internal Voltage adjustment, 
@@ -67,10 +68,10 @@ uint8_t display_clear( void )
 	return (uint8_t) returnStatus;
 }
 
-	/**
+/**
 !Запись данных в паямять ЖКИ по адресу address количеством sizeOfData
 
-	*/
+*/
 uint8_t display_data_write(uint16_t address, uint8_t *data, uint8_t sizeOfData)
 {
 	HAL_StatusTypeDef returnStatus;
@@ -85,10 +86,10 @@ uint8_t display_data_write(uint16_t address, uint8_t *data, uint8_t sizeOfData)
 	return (uint8_t) returnStatus;
 }
 
-	/**
-	!Чтение одного байта из памяти ЖКИ по адресу address
+/**
+!Чтение одного байта из памяти ЖКИ по адресу address
 
-	*/
+*/
 uint8_t display_byte_read( uint16_t address )
 {
 	uint8_t byte;
@@ -98,14 +99,243 @@ uint8_t display_byte_read( uint16_t address )
 }
 
 /**
-! Вывод числа на основное поле дисплее (8 сегментов)
+!Очистка цифр основного поля (8 больших сегментов)
+
 */
-void display_main_numbers(uint32_t number)
+void display_clear_main_numbers( void )
 {
-	uint8_t value_1 = 0xD0;
-	uint8_t value_2 = 0x07;
-	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 0x01, 1, &value_1, 1, 255);
-	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 0x02, 1, &value_2, 1, 255);
+	uint8_t clear_byte = 0x00;
+	uint8_t current_data = 0x00;
+	
+	for(uint8_t i = 0x02; i < 0x05; i++)
+	{
+		HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, i, 1, &clear_byte, 1, 255);
+	}
+	for(uint8_t i = 0x10; i < 0x13; i++)
+	{
+		HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, i, 1, &clear_byte, 1, 255);
+	}
+	
+	//очистка 1 сегмента с сохранением символа батареи, если есть
+	HAL_I2C_Mem_Read(&hi2c2, LCD_ADDRESS, 0x13, 1, &current_data, 1, 255);
+	
+	clear_byte = current_data & 0x08;
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 0x13, 1, &clear_byte, 1, 255);
+	
+	//очистка 5 сегмента с сохранением символов P N R1 R2, если есть
+	HAL_I2C_Mem_Read(&hi2c2, LCD_ADDRESS, 0x01, 1, &current_data, 1, 255);
+	
+	clear_byte = current_data & 0x0F;
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 0x01, 1, &clear_byte, 1, 255);
+	
+	//очистка 1 сегмента с сохранением символов единиц измерения, если есть
+	HAL_I2C_Mem_Read(&hi2c2, LCD_ADDRESS, 0x05, 1, &current_data, 1, 255);
+	
+	clear_byte = current_data & 0xF8;
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 0x05, 1, &clear_byte, 1, 255);
+}
+
+/**
+! Вывод числа на основное поле дисплее (8 сегментов)
+На вход принимается число (не более 8 разрядов), парсится для 
+получения массива цифр в обратном порядке, размер массива на 1 больше, т.к.
+последний байт - порядковый номер плавающей запятой (либо 0х00, если 
+запятая отсутствует)
+*/
+void display_main_numbers(uint32_t number, uint8_t count, uint8_t dot_addr )
+{
+	if(count > 8 || count < 1)
+	{
+		return;
+	}
+
+	uint8_t num_buff[count + 1];
+	//count + 1 = кол-во задействованых сегментов + 1 (номер точки, если есть)
+	
+	display_parse_number( number, num_buff, count);
+
+	num_buff[count] = dot_addr; 
+	
+	display_clear_main_numbers();
+
+	uint8_t current_number;
+	uint8_t address;
+	
+	for(uint8_t i = 0x00; i < count; i++)
+	{
+		current_number = num_buff[i];
+		
+		//рассчеn позиции (адрес байта в памяти ЖКИ) 
+		address = 0x08 - i;
+		switch(address)
+		{
+			case 0x08:
+				address = 0x05;
+				break;
+			case 0x07:
+				address = 0x04;
+				break;
+			case 0x06:
+				address = 0x03;
+				break;
+			case 0x05:
+				address = 0x02;
+				break;
+			case 0x04:
+				address = 0x10;
+				break;
+			case 0x03:
+				address = 0x11;
+				break;
+			case 0x02:
+				address = 0x12;
+				break;
+			case 0x01:
+				address = 0x13;
+				break;
+			
+			default:
+				break;
+		}
+		
+		//вызов функции, которая вписывает байт, пропущенный через маску, в определенный адрес
+		display_write_one_number(current_number, address);
+		
+		//если есть запятая - выводим
+		if(num_buff[count] > 0)
+		{
+			switch(num_buff[count])
+			{
+				case 1:
+					display_write_one_number(0x10, 0x10);
+					break;
+				case 2:
+					display_write_one_number(0x10, 0x02);
+					break;
+				case 3:
+					display_write_one_number(0x10, 0x03);
+				case 4:
+					display_write_one_number(0x10, 0x04);
+					break;
+				
+				default:
+					break;
+			}
+		}
+	}
+
+}
+
+/**
+!Вывод заданной цифры в заданный сегмент
+*/
+void display_write_one_number( uint8_t number, uint8_t address )
+{	
+	uint8_t data_byte_msb, data_byte_lsb;
+	uint8_t number_mask_msb, number_mask_lsb;
+	
+	switch(number)
+	{
+		case 0x00:
+			number_mask_msb = MAIN_NUMBER_0_MSB;
+			number_mask_lsb = MAIN_NUMBER_0_LSB;
+			break;
+		case 0x01:
+			number_mask_msb = MAIN_NUMBER_1_MSB;
+			number_mask_lsb = MAIN_NUMBER_1_LSB;
+			break;		
+		case 0x02:
+			number_mask_msb = MAIN_NUMBER_2_MSB;
+			number_mask_lsb = MAIN_NUMBER_2_LSB;
+			break;
+		case 0x03:
+			number_mask_msb = MAIN_NUMBER_3_MSB;
+			number_mask_lsb = MAIN_NUMBER_3_LSB;
+			break;
+		case 0x04:
+			number_mask_msb = MAIN_NUMBER_4_MSB;
+			number_mask_lsb = MAIN_NUMBER_4_LSB;
+			break;
+		case 0x05:
+			number_mask_msb = MAIN_NUMBER_5_MSB;
+			number_mask_lsb = MAIN_NUMBER_5_LSB;
+			break;
+		case 0x06:
+			number_mask_msb = MAIN_NUMBER_6_MSB;
+			number_mask_lsb = MAIN_NUMBER_6_LSB;
+			break;
+		case 0x07:
+			number_mask_msb = MAIN_NUMBER_7_MSB;
+			number_mask_lsb = MAIN_NUMBER_7_LSB;
+			break;
+		case 0x08:
+			number_mask_msb = MAIN_NUMBER_8_MSB;
+			number_mask_lsb = MAIN_NUMBER_8_LSB;
+			break;
+		case 0x09:
+			number_mask_msb = MAIN_NUMBER_9_MSB;
+			number_mask_lsb = MAIN_NUMBER_9_LSB;
+			break;
+		case 0x10:
+			number_mask_msb = MAIN_DOT_MSB;
+			number_mask_lsb = MAIN_DOT_LSB;
+		
+		default:
+			break;
+	}
+	
+	if (address <= 0x05 && address >= 0x02)
+	{
+		HAL_I2C_Mem_Read(&hi2c2, LCD_ADDRESS, address, 1, &data_byte_msb, 1, 255);
+		HAL_I2C_Mem_Read(&hi2c2, LCD_ADDRESS, address - 1, 1, &data_byte_lsb, 1, 255);
+
+		data_byte_msb |= number_mask_msb;
+		data_byte_lsb |= number_mask_lsb;
+
+		HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, address, 1, &data_byte_msb, 1, 255);
+		HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, address - 1, 1, &data_byte_lsb, 1, 255);
+		
+	} else if (address >= 0x10 && address <= 0x13) {
+		
+		uint8_t msb_numbers_mask = number_mask_msb | number_mask_lsb;
+		uint8_t data_byte;
+		
+		HAL_I2C_Mem_Read(&hi2c2, LCD_ADDRESS, address, 1, &data_byte, 1, 255);
+
+		data_byte |= msb_numbers_mask;
+
+		HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, address, 1, &data_byte, 1, 255);
+	}
+}
+
+/**
+!Парсинг целых чисел. Из числа получаем массив (причем запись в массив ведется с конца
+123 -> [3, 2, 1])
+*/
+void display_parse_number( uint32_t input, uint8_t *numbers, uint8_t count )
+{
+	if (count < 8)
+	{
+		uint8_t temp = 8 - count;
+		for(uint8_t i = 0; i < temp; i++)
+		{
+			input /= 10;
+		}
+		
+		temp = 8 - temp;
+		for (uint8_t i = 0; i < count; i++)
+		{	
+			numbers[i] = input % 10;
+			input /= 10;
+		}
+	} else {	
+		for (uint8_t i = 0; i < count; i++)
+		{
+			numbers[i] = input % 10;
+			input /= 10;
+		}
+	}
+
 }
 
 //===================================================================================

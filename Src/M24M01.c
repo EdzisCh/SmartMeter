@@ -1,5 +1,7 @@
 #include "M24M01.h"
 
+uint32_t current_address = 0x00;
+
 /**
 !Запись данных в EEPROM
 Возвращаемое значение: от 0х00 до 0х03 см. HAL_StatusTypeDef, 0x04 - выход за 

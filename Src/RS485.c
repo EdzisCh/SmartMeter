@@ -1,9 +1,9 @@
 #include "RS485.h"
 
-	/**
-	! Отправка одного байта по  RS485. После передачи пин RX/TX_485 
-	  устанавливается в 0. Используется как senchar(char ch)
-	*/
+/**
+! Отправка одного байта по  RS485. После передачи пин RX/TX_485 
+  устанавливается в 0. Используется как senchar(char ch)
+*/
 int rs485_send_byte( uint8_t byte )
 {
 	int output;
@@ -23,10 +23,10 @@ int rs485_send_byte( uint8_t byte )
 	return output;
 }
 
-	/**
-	! Отправка байтов в количестве size по  RS485. После передачи пин RX/TX_485 
-	  устанавливается в 0
-	*/
+/**
+! Отправка байтов в количестве size по  RS485. После передачи пин RX/TX_485 
+  устанавливается в 0
+*/
 void rs485_send_message( uint8_t *message, uint8_t size )
 {
 	if (HAL_GPIO_ReadPin(RX_TX_485_GPIO_Port, RX_TX_485_Pin))
@@ -39,19 +39,37 @@ void rs485_send_message( uint8_t *message, uint8_t size )
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
 }
 
-	/**
-	! Получение нескольких байт размеров size по  RS485. После передачи пин RX/TX_485 
-	  устанавливается в 0
-	*/
-void rs485_get_message( uint8_t *message, uint8_t size )
+/**
+! Получение нескольких байт размеров size по  RS485. После передачи пин RX/TX_485 
+  устанавливается в 0
+*/
+uint8_t rs485_get_message( uint8_t *message, uint8_t size )
 {
+	uint8_t status;
+	
 	if (HAL_GPIO_ReadPin(RX_TX_485_GPIO_Port, RX_TX_485_Pin))
 	{
 		HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
-		HAL_UART_Receive(&huart5, message, size, 1000);
+		status = HAL_UART_Receive(&huart5, message, size, 1000);
 	} else {
-		HAL_UART_Receive(&huart5, message, size, 1000);	
+		status = HAL_UART_Receive(&huart5, message, size, 1000);	
 	}
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
+	
+	return status;
 }
 
+/**
+!Если бит RXNE в UART_ISR присутствует, значит есть данные на входе
+*/
+uint8_t rs485_is_received( void )
+{
+	uint32_t isr_data = huart5.Instance->RDR;
+	//isr_data &= 0x00000010;
+	if(isr_data != 0)
+	{
+		return 1;
+	}
+	
+	return 0;
+}

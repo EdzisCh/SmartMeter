@@ -5,12 +5,9 @@
 
 extern RTC_HandleTypeDef hrtc;
 
-static RTC_TimeTypeDef current_time;
-static RTC_DateTypeDef current_date;
-
 void rtc_set_init_dateTime( void );
 
-uint64_t rtc_get_timestamp( void );
+void rtc_get_timestamp( uint32_t *timestamp );
 
 void rtc_set_hours( uint8_t hours );
 void rtc_set_minutes( uint8_t minutes );

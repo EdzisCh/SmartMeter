@@ -24,6 +24,8 @@ void cs5490_init( CS5490 *chip, uint8_t conv_type )
 		default:
 			break;
 	}
+	
+	chip->cs5490_read_OK = 0x01;
 }
 
 
@@ -36,14 +38,13 @@ void cs5490_write( CS5490 *chip, int page, int address, uint32_t value )
 	page |= PAGE_BYTE;
 	address |= WRITE_BYTE;
 	
-	HAL_UART_Transmit(chip->cs5490_huart, (uint8_t *) &page, 1, 100);
-	chip->cs5490_selectedPage = page;
-	HAL_UART_Transmit(chip->cs5490_huart, (uint8_t *) &address, 1, 100);
+	HAL_UART_Transmit(chip->cs5490_huart, (uint8_t *) &page, 1, 255);
+	HAL_UART_Transmit(chip->cs5490_huart, (uint8_t *) &address, 1, 255);
 	
 	for ( int i=2; i>=0 ; i-- )
 	{
 		chip->cs5490_data[i] = value & 0xFF;
-		HAL_UART_Transmit(chip->cs5490_huart, &(chip->cs5490_data[i]), 1, 100);  
+		HAL_UART_Transmit(chip->cs5490_huart, &(chip->cs5490_data[i]), 1, 255);  
 		value >>= 8;
 	}
 	
@@ -58,12 +59,18 @@ void cs5490_read( CS5490 *chip, uint8_t page, uint8_t address )
 	page |= PAGE_BYTE;
 	address |= READ_BYTE;
 	
-	HAL_UART_Transmit(chip->cs5490_huart, (uint8_t *) &page, 1, 100);
-	HAL_UART_Transmit(chip->cs5490_huart, (uint8_t *) &address, 1, 100);
+	HAL_UART_Transmit(chip->cs5490_huart, (uint8_t *) &page, 1, 255);
+	HAL_UART_Transmit(chip->cs5490_huart, (uint8_t *) &address, 1, 255);
 	
+	uint8_t output = 0x00;
 	for ( int i=2; i>=0; i-- )
 	{
-		HAL_UART_Receive(chip->cs5490_huart, &(chip->cs5490_data[i]), 1, 100);
+		output |= HAL_UART_Receive(chip->cs5490_huart, &(chip->cs5490_data[i]), 1, 255);
+	}
+	
+	if(output != 0x00)
+	{
+		chip->cs5490_read_OK = READ_OPERATION_FAILURE;
 	}
 }
 
@@ -74,7 +81,7 @@ void cs5490_read( CS5490 *chip, uint8_t page, uint8_t address )
 void cs5490_instruct( CS5490 *chip, int value )
 {
 	uint8_t buffer = (INSTRUCTION_BYTE | (uint8_t)value);
-	HAL_UART_Transmit(chip->cs5490_huart, &buffer, 1, 100);
+	HAL_UART_Transmit(chip->cs5490_huart, &buffer, 1, 255);
 }
 
 	/**
@@ -95,7 +102,7 @@ uint32_t cs5490_concatData( CS5490 *chip )
 	!Чтение регистра по адресу address на странице page
 
 	*/
-uint32_t cs5490_readReg( CS5490 *chip, int page, int address )
+uint32_t cs5490_readReg( CS5490 *chip, uint8_t page, uint8_t address )
 {
 	cs5490_read(chip, page, address);
 	return cs5490_concatData(chip);
@@ -154,8 +161,43 @@ double cs5490_convert_to_double( CS5490 *chip, int LSB_pow, int MSB_option )
 			output /= pow(2,LSB_pow);
 			break;
 		
+	}
 
+	return output;
+}
 
+double cs5490_convert_to_double_2( uint32_t input, int LSB_pow, int MSB_option )
+{
+	double output = 0.0;
+	uint8_t MSB;
+
+	switch ( MSB_option )
+	{
+		case 0x00:
+			input &= 0x7FFFFF;
+			output = (double)input;
+			output /= pow(2, LSB_pow);
+			break;
+
+		case 0x01:
+		    MSB = ((input & 0x0000FF00) >> 8) & 0x80;
+			if ( MSB )
+			{ 
+				input = ~input;
+				input = input & 0x00FFFFFF; 
+				output = (double)input + 1.0;
+				output /= -pow(2,LSB_pow);
+			} else {  
+				output = (double)input;
+				output /= (pow(2,LSB_pow)-1.0);
+			}
+			break;
+		default:
+		case 0x02:
+			output = (double)input;
+			output /= pow(2,LSB_pow);
+			break;
+		
 	}
 
 	return output;
@@ -348,13 +390,19 @@ uint32_t cs5490_get_P( CS5490 *chip )
 double cs5490_get_Irms( CS5490 *chip ){
 	//Page 16, Address 6
 	cs5490_read(chip, 0x10, 0x06);
-	return cs5490_convert_to_double(chip, 24, 0x02);
+	
+	uint32_t hex_value = cs5490_concatData(chip);
+	double factor = 1/(pow(2, 24) - 1);
+	return factor * (double) hex_value;
 }
 
 double cs5490_get_Vrms( CS5490 *chip ){
 	//Page 16, Address 7
 	cs5490_read(chip, 0x10, 0x07);
-	return cs5490_convert_to_double(chip, 24, 0x02);
+	
+	uint32_t hex_value = cs5490_concatData(chip);
+	double factor = 1/(pow(2, 24) - 1);
+	return factor * (double) hex_value;
 }
 
 double cs5490_get_PF( CS5490 *chip )
@@ -368,7 +416,15 @@ double cs5490_get_Pavg( CS5490 *chip )
 {
 	//Page 16, Address 5
 	cs5490_read(chip, 0x10, 0x05);
-	return cs5490_convert_to_double(chip, 23, 0x01);
+	
+	int8_t MSB = (chip->cs5490_data[0] & 0x80) >> 7;
+	if(MSB == 0x00)
+	{
+		MSB = -1;
+	}
+	uint32_t hex_value = cs5490_concatData(chip);
+	double factor = 1/(pow(2, 23) - 1) * (-1) * MSB;
+	return factor * (double) hex_value;
 }
 
 double cs5490_get_Qavg( CS5490 *chip )
@@ -429,172 +485,170 @@ double cs5490_get_T( CS5490 *chip )
 
 uint32_t cs5490_get_RegChk( CS5490 *chip )
 {
-	return cs5490_readReg(chip, 16, 1);
+	return cs5490_readReg(chip, 0x10, 0x01);
 }
 
 /**
 !Калибровка измерителя по инструкции AN366REV2 стр 15
 
 */
-uint8_t cs5490_first_calibrate( CS5490 *chip, uint8_t *calibrationData )
+
+uint8_t full_callibration( CS5490 *chip, uint8_t *calibrationData )
 {
-	uint8_t outputStatus = 0x00;
-	uint32_t temp;
 	//1 reset
 	cs5490_reset(chip);
 	
-	//2 single conv
+	//2 single conv.
 	cs5490_single_conversation(chip);
 	
-	//3 check RegCheck
-	uint32_t tempRegChk = cs5490_get_RegChk(chip);
-//	if(tempRegChk != 0x00)
-//	{
-//		//outputStatus = 0x01;
-//		//return outputStatus;
-//	}
+	//3 verify regcheck
+	uint32_t regcheck = cs5490_get_RegChk(chip);
+	if (regcheck != 0x00dd8bcc || !chip->cs5490_read_OK)
+	{
+		printf("3 phase error: regcheck=%x\r\n", regcheck);
+		return 0x03;
+	}
 	
-	//4 HPF enable
-	cs5490_read(chip, 16, 0);
-	temp = cs5490_concatData(chip);
-	temp |= 0x00000A;
-	cs5490_write(chip, 16, 0, temp);
+	//4 enable HPF
+	uint32_t reset = cs5490_readReg(chip, 0x10, 0x00);
+	if(!chip->cs5490_read_OK)
+	{
+		printf("4 phase error\r\n");
+		return 0x04;
+	}
+	reset |= 0x0000000A;
+	cs5490_write(chip, 0x10, 0x00, reset);
 	
-	#define SCALE 50/2*4194304
+	//5 set scale reg (no full load available)
+	cs5490_write(chip, 0x12, 0x3F, SCALE_REGISTER_VALUE);
 	
-	//5 set scale reg
-	cs5490_write(chip, 18, 63, SCALE);
+	//6 apply ref. voltage and current
+	printf("apply\r\n");
 	
-	//6 start cont. conv.
+	//7 start continious conv
 	cs5490_continious_conversation(chip);
+	HAL_Delay(1000);
 	
-	//7 read values
+	//8 read values
 	double rmsV = cs5490_get_Vrms(chip);
 	double freq = cs5490_get_freq(chip);
 	double rmsI = cs5490_get_Irms(chip);
 	double PF = cs5490_get_PF(chip);
 	double P = cs5490_get_Pavg(chip);
-	double Q = cs5490_get_Qavg(chip);
-	double S = cs5490_get_Savg(chip);
    
-	printf("Vac RMS: ");
-	rmsV = (((rmsV/SYS_GAIN)/V_FS)*V_FS_RMS_V)/V_ALFA;
-	printf("%f\r\n", rmsV);
-	printf("%f Hz\r\n", freq*SAMPLE_COUNT_DEFAULT);
-	printf("Iac RMS: ");
-	rmsI  = (((rmsI/SYS_GAIN)/I_FS)*I_FS_RMS_V)/R_SHUNT_OHM;
-	printf("%f\r\n", rmsI);
-	printf("PF%f\r\n", PF);
-	printf("Pact: ");
-	printf("%f\r\n", P * P_COEFF); 
-	printf("Preact: ");
-	printf("%f\r\n", Q * P_COEFF);
-	printf("S: ");
-	printf("%f\r\n", S * P_COEFF);
+	if(!chip->cs5490_read_OK)
+	{
+		printf("error reading data at 8 phase\r\n");
+		return 0x09;
+	}
 	
-	//8 stop the conv
-	cs5490_instruct(chip, 0xD8);
+	rmsV = (rmsV*VOLTAGE_FULLSCALE)/REGISTER_FULLSCALE;
 	
-	//9 set Tsettle 2000ms
+	printf("Vrms: %f V\r\n", rmsV);
+	printf("Freq: %f Hz\r\n", freq*SAMPLE_COUNT_DEFAULT);
+	
+	rmsI = (rmsI*CURRENT_FULLSCALE)/REGISTER_FULLSCALE;
+	
+	printf("Irms: %f A\r\n", rmsI);
+	printf("PF %f\r\n", PF);
+	printf("P: %f W\r\n", P * POWER_FULLSCALE);	
+	
+	//9 stop conv
+	cs5490_halt_conversation(chip);
+	
+	//10 set Tsettle 2000ms
 	cs5490_write(chip, 16, 57, 0x1F40); 
 	uint32_t reg = cs5490_readReg(chip, 16, 57);
-	if (reg != 0x1F40) outputStatus = 0x02;
+	if (reg != 0x1F40 || !chip->cs5490_read_OK)
+	{
+		printf("10 error: reg=%x\r\n", reg);
+		return 0x0A;
+	}
 	
-	//10 set SampleCount 16000
+	//11 set SampleCount 16000
 	cs5490_write(chip, 16, 51, 0x3E80); 
 	reg = cs5490_readReg(chip, 16, 51);
-	if (reg != 0x3E80) outputStatus = 0x03;
+	if (reg != 0x3E80 || !chip->cs5490_read_OK)	
+	{
+		printf("11 error: reg=%x\r\n", reg);
+		return 0x0B;
+	}
 
-	//11 clear DRDY bit
+	//12 clear DRDY bit
 	reg = cs5490_readReg(chip, 0, 23);
 	cs5490_write(chip, 0, 23, 0x800000); 
 	uint32_t status0_reg_verify = cs5490_readReg(chip, 0, 23);
-	if( (reg & 0x7FFFFF) != status0_reg_verify) outputStatus = 0x04;
-
-	
-	if(outputStatus == 0x00)
+	if( (reg & 0x7FFFFF ) != status0_reg_verify || !chip->cs5490_read_OK )
 	{
-		//11 send calibrate command and wait for DRDY to be set
-		cs5490_calibrate(chip, CALIBRATION_TYPE_GAIN, CALIBRATION_TYPE_GAIN);  
-		
-		//12 wait for DRDY
-		uint8_t DRDY, time_flag = 0x00, i;
-		HAL_GPIO_WritePin(LED_ACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_SET);
-		do
-		{
-			reg = cs5490_readReg(chip, 0, 23); // Status0 register (in order to manage the DRDY bit)
-			if(reg & 0x800000)
-				DRDY = 0x01; 
-			else 
-				DRDY = 0x00;
-			i++;
-			if(i == 255) time_flag = 0x01;
-		}
-		while( DRDY == 0 && time_flag == 0x01);
-	  	HAL_GPIO_WritePin(LED_ACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_RESET);
-
-		if(DRDY)
-		{
-			//13 cont. conv. 
-			cs5490_continious_conversation(chip);
-
-			HAL_Delay(2000);
-			
-			//14 verify values
-			double rmsV = cs5490_get_Vrms(chip);
-			double freq = cs5490_get_freq(chip);
-			double rmsI = cs5490_get_Irms(chip);
-			double PF = cs5490_get_PF(chip);
-			uint32_t Igain = cs5490_readReg(chip, 16, 33);
-			
-			printf("Vac RMS: ");
-			rmsV = (((rmsV/SYS_GAIN)/V_FS)*V_FS_RMS_V)/V_ALFA;
-			printf("%f\r\n", rmsV);
-			printf("%f Hz\r\n", freq*SAMPLE_COUNT_DEFAULT);
-			printf("Iac RMS: ");
-			rmsI  = (((rmsI/SYS_GAIN)/I_FS)*I_FS_RMS_V)/R_SHUNT_OHM;
-			printf("%f\r\n", rmsI);
-			printf("PF%f\r\n", PF);
-
-			//15 write values to mem
-			cs5490_write(chip, 16, 33, Igain);
-			uint32_t IgainReadBack = cs5490_readReg(chip, 16, 33);
-			if (IgainReadBack == Igain)
-			{
-				cs5490_single_conversation(chip); // In order to compute the critical register checksum
-				HAL_Delay(1000);
-
-				uint32_t regChk = cs5490_get_RegChk(chip);
-					
-				printf("I gain: %x\r\n", Igain);
-				printf("Critical registers checksum: "); // Must be compared with the one expected for the current configuration (stored in the eeprom). In case of mismatch --> reset CS5490
-				printf("RegChk %x\r\n", regChk);
-				printf( "RESET OK! Tuned parameters applied." );
-
-				calibrationData[0] = (uint8_t)(Igain>>16); // MSB 
-				calibrationData[1] = (uint8_t)(Igain>>8); 
-				calibrationData[2] = (uint8_t)Igain;       // LSB
-				calibrationData[3] = (uint8_t)(regChk>>16); // MSB 
-				calibrationData[4] = (uint8_t)(regChk>>8); 
-				calibrationData[5] = (uint8_t)regChk;       // LSB
-
-				uint8_t CRC_v = 0;
-				for(uint8_t i=0; i<6;i++)
-				{
-				  CRC_v ^= calibrationData[i];
-				}  
-				
-			} else {
-				printf("uart 1\r\n");
-			}
-		} else {
-			printf("uart 2\r\n");
-		}
-
-	} else {
-	  printf("uart 3\r\n"); 
+		printf("12 error: reg=%x \r\n", status0_reg_verify);
+		return 0x0C;
 	}
-
-  return outputStatus;
+	
+	//13 send AC Gain calibration command
+	cs5490_calibrate(chip, CALIBRATION_TYPE_GAIN, CALIBRATION_CHANNEL_CURRENT_AND_VOLTAGE);
+	
+	//14 whait DRDY for 3 sec
+	uint8_t DRDY;
+	uint16_t start = uwTick;
+	
+	do
+	{
+		reg = cs5490_readReg(chip, 0, 23); 
+		if(chip->cs5490_read_OK && (reg & 0x800000))
+		{
+			DRDY = 0x01; 
+		} else {
+			DRDY = 0x00;
+		}
+	}
+	while( DRDY == 0 && (uwTick - start) < 3000);
+	
+	//15 start cont. conv.
+	cs5490_continious_conversation(chip);
+	HAL_Delay(500);
+	
+	//16 verify accuracy
+	rmsV = cs5490_get_Vrms(chip);
+	freq = cs5490_get_freq(chip);
+	rmsI = cs5490_get_Irms(chip);
+	PF = cs5490_get_PF(chip);
+	P = cs5490_get_Pavg(chip);
+			
+	if(!chip->cs5490_read_OK)
+	{
+		printf("16 error\r\n");
+		return 0x10;
+	}
+	
+	rmsV = (rmsV*VOLTAGE_FULLSCALE)/REGISTER_FULLSCALE;
+	
+	printf("Vrms: %f V\r\n", rmsV);
+	printf("Freq: %f Hz\r\n", freq*SAMPLE_COUNT_DEFAULT);
+	
+	rmsI = (rmsI*CURRENT_FULLSCALE)/REGISTER_FULLSCALE;
+	
+	printf("Irms: %f A\r\n", rmsI);
+	printf("PF %f\r\n", PF);
+	printf("P: %f W\r\n", P * POWER_FULLSCALE);
+	
+	uint32_t Igain = cs5490_readReg(chip, 16, 33);
+	uint32_t Vgain = cs5490_readReg(chip, 16, 35);
+	uint32_t Iac_off = cs5490_readReg(chip, 16, 37);
+	uint32_t Poff = cs5490_readReg(chip, 16, 36);
+	uint32_t PF_2 = cs5490_readReg(chip, 16, 21);
+	uint32_t regcheck_2 = cs5490_readReg(chip, 16, 1);
+	
+	if(!chip->cs5490_read_OK)
+	{
+		printf("16 last error\r\n");
+		return 0x11;
+	}
+	
+	printf("Igain %x\r\n", Igain);
+	printf("Vgain %x\r\n", Vgain);
+	printf("Iacoff %x\r\n", Iac_off);
+	printf("Poff %x\r\n", Poff);
+	printf("PF_2 %x\r\n", PF_2);
+	printf("Regcheck %x\r\n", regcheck_2);
+	
 }
-	  

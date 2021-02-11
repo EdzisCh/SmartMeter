@@ -403,6 +403,11 @@
               <FilePath>../Src/stm32l4xx_it.c</FilePath>
             </File>
             <File>
+              <FileName>lcd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\lcd.c</FilePath>
+            </File>
+            <File>
               <FileName>stm32l4xx_hal_msp.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Src/stm32l4xx_hal_msp.c</FilePath>
@@ -411,11 +416,6 @@
               <FileName>CS5490.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\CS5490.c</FilePath>
-            </File>
-            <File>
-              <FileName>lcd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Src\lcd.c</FilePath>
             </File>
             <File>
               <FileName>CS5490.h</FileName>

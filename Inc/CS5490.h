@@ -1,7 +1,7 @@
-	/**
-	!	
+/**
+!	
 
-	*/
+*/
 #ifndef CS5490_H
 #define CS5490_H
 
@@ -26,22 +26,23 @@
 #define PAGE_BYTE 0x80
 #define INSTRUCTION_BYTE 0xC0
 #define CALIBRATION_BYTE 0x20
+#define READ_OPERATION_FAILURE 0
+#define READ_OPERATION_SUCCESS 1
 
-#define R_SHUNT_OHM   100  
-#define V_ALFA        (1000.0/1689000.0) 
-#define SYS_GAIN      1.25 
-#define V_FS          0.6
-#define V_FS_RMS_V    0.17676 
-#define V_MAX_RMS     (V_FS_RMS_V/V_ALFA)
-#define I_FS          0.6
-#define I_FS_RMS_V    0.17676 
-#define I_MAX_RMS_A   (I_FS_RMS_V/R_SHUNT_OHM)
-#define P_FS          0.36
-#define P_COEFF       ((V_MAX_RMS * I_MAX_RMS_A) / (P_FS * SYS_GAIN * SYS_GAIN))
+
+
+#define REGISTER_FULLSCALE 0.6
+#define VOLTAGE_FULLSCALE 240  
+//#define V_MAX_RMS_V (V_FS_RMS_V/VOLTAGE_DEVIDER_V)
+#define CURRENT_FULLSCALE 100  
+//#define I_MAX_RMS_A   (I_FS_RMS_V/R_SHUNT_OHM)
+#define POWER_REGISTER_FULLSCALE 0.36
+#define POWER_FULLSCALE ((VOLTAGE_FULLSCALE * CURRENT_FULLSCALE) / (POWER_REGISTER_FULLSCALE))
 #define SAMPLE_COUNT_DEFAULT  4000
-#define I_CAL_RMS_A  1.3126 
-#define SCALE_REGISTER_FRACTION  (0.6 * SYS_GAIN * (I_CAL_RMS_A / I_MAX_RMS_A)) 
-#define SCALE_REGISTER_VALUE ((uint32_t)(SCALE_REGISTER_FRACTION * 0x800000)) 
+
+#define CURRENT_CALIBRATION_REF  0.183 
+#define SCALE_REGISTER_FRACTION  (0.6 * (CURRENT_CALIBRATION_REF / CURRENT_FULLSCALE)) 
+#define SCALE_REGISTER_VALUE ((uint32_t)(SCALE_REGISTER_FRACTION * 0x800000)) //pow(2, 23) = 0x800000
 
 	/**
 	! Структура измерителя
@@ -51,7 +52,7 @@ typedef struct CS5490
 {
 	UART_HandleTypeDef *cs5490_huart;
 	uint8_t cs5490_data[3];
-	int cs5490_selectedPage;
+	uint8_t cs5490_read_OK;
 	float cs5490_MCLK;
 } CS5490;
 
@@ -60,12 +61,13 @@ void cs5490_write( CS5490 *chip, int page, int address, uint32_t value );
 void cs5490_read( CS5490 *chip, uint8_t page, uint8_t address );
 void cs5490_instruct( CS5490 *chip, int instruction );
 uint32_t cs5490_concatData( CS5490 *chip );
-uint32_t cs5490_readReg( CS5490 *chip, int page, int address );
+uint32_t cs5490_readReg( CS5490 *chip, uint8_t page, uint8_t address );
 void cs5490_calibrate( CS5490 *chip, uint8_t type, uint8_t channel );
 
-uint8_t cs5490_first_calibrate( CS5490 *chip, uint8_t *calibrationData );
+uint8_t full_callibration( CS5490 *chip, uint8_t *calibrationData );
 
 double cs5490_convert_to_double( CS5490 *chip, int LSB_pow, int MSB_option );
+double cs5490_convert_to_double_2( uint32_t input, int LSB_pow, int MSB_option );///!!!
 uint32_t cs5490_convert_to_binary(int LSB_pow, int MSB_option, double input);
 
 //===================================================================================
