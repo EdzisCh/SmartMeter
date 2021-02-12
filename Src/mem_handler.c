@@ -42,17 +42,41 @@ void mem_handler_get_tarrif_accumulator( void )
 }
 
 /**
-!Формирование ретроспективы и отправка в память. 
+!Формирование ретроспективы для каждого изменения даты (день, месяц, год) и отправка в память. 
 
 */
-void mem_handler_send_retrospective_to_eeprom( total_energy_register *regs )
+void mem_handler_send_retrospective_to_eeprom( uint8_t date, uint32_t *timestamp, total_energy_register *regs )
 {
 	uint32_t data_to_mem[6];
-	rtc_get_timestamp(data_to_mem);
+	data_to_mem[0] = timestamp[0];
+	data_to_mem[1] = timestamp[1];
 	data_to_mem[2] = regs->consumed_active_energy;
 	data_to_mem[3] = regs->consumed_reactive_energy;
 	data_to_mem[4] = regs->released_active_energy;
 	data_to_mem[5] = regs->released_reactive_energy;
 	
-	m24m01_save_to_mem(current_address, (uint8_t *) data_to_mem, 24);
+	if(date == 1)
+	{
+		m24m01_save_to_mem(current_address_of_day_retrosective, (uint8_t *) data_to_mem, 24);
+		current_address_of_day_retrosective += 24;
+		if(current_address_of_day_retrosective >= MEM_MAX_ADDRESS_OF_DAY_RETROSPEC)
+			current_address_of_day_retrosective = 0x00;
+	} else if (date == 2)
+	{
+		m24m01_save_to_mem(current_address_of_month_retrosective, (uint8_t *) data_to_mem, 24);
+		current_address_of_month_retrosective += 24;
+		if(current_address_of_month_retrosective >= MEM_MAX_ADDRESS_OF_MONTH_RETROSPEC)
+			current_address_of_month_retrosective = 0x0C00;
+	} else if (date == 3)
+	{
+		m24m01_save_to_mem(current_address_of_year_retrosective, (uint8_t *) data_to_mem, 24);
+		current_address_of_year_retrosective += 24;
+		if(current_address_of_year_retrosective >= MEM_MAX_ADDRESS_OF_YEAR_RETROSPEC)
+			current_address_of_year_retrosective = 0x0FC0;
+	}
+}
+
+uint8_t mem_handler_get_all_stored_data( void )
+{
+	
 }

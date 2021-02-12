@@ -1,16 +1,20 @@
-	/**
-	!
-	*/
+/**
+!
+*/
 #ifndef _MEM_HANDLER_H_
 #define _MEM_HANDLER_H_
 
 #include "stm32l4xx_hal.h"
-#include "RTC.h"
 #include "M24M01.h"
-	/**
-	! Промежуточные данные из измерителей
-	
-	*/
+
+#define MEM_MAX_ADDRESS_OF_DAY_RETROSPEC 0x0C00
+#define MEM_MAX_ADDRESS_OF_MONTH_RETROSPEC 0x0FC0
+#define MEM_MAX_ADDRESS_OF_YEAR_RETROSPEC 0x10B0
+
+/**
+! Промежуточные данные из измерителей
+
+*/
 typedef struct data
 {
 	uint32_t P;
@@ -53,6 +57,9 @@ void mem_handler_get_data( void );
 void mem_handler_get_total_energy_register( void );
 void mem_handler_get_tarrif_accumulator( void );
 
-void mem_handler_send_retrospective_to_eeprom( total_energy_register *regs );
+void mem_handler_send_retrospective_to_eeprom( uint8_t date, uint32_t *timestamp, total_energy_register *regs );
+
+//тестовая функция
+uint8_t mem_handler_get_all_stored_data( void );
 
 #endif

@@ -3,38 +3,53 @@
 RTC_TimeTypeDef current_time;
 RTC_DateTypeDef current_date;
 
-	/**
-	!Установка первоночальной даты на 10:44:00 19.01.21
-	
-	*/
-void rtc_set_init_dateTime( void )
+/**
+!Установка первоночальной даты 
+*/
+uint8_t rtc_set_init_dateTime( void )
 {
-	current_time.Hours = 0x16;
-	current_time.Minutes = 0x57;
-	current_time.Seconds = 0x0;
+	
+	current_time.Hours = INITIAL_HOUR;
+	current_time.Minutes = INITIAL_MINUTE;
+	current_time.Seconds = INITIAL_SECUNDE;
+	
 	current_time.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
 	current_time.StoreOperation = RTC_STOREOPERATION_RESET;
-	HAL_RTC_SetTime(&hrtc, &current_time, RTC_FORMAT_BCD);
+	
+	if(HAL_RTC_SetTime(&hrtc, &current_time, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x01;
+	}
 
 	current_date.WeekDay = RTC_WEEKDAY_THURSDAY;
-	current_date.Month = RTC_MONTH_FEBRUARY;
-	current_date.Date = 0x04;
-	current_date.Year = 0x21;
+	current_date.Month = INITIAL_MONTH;
+	current_date.Date = INITIAL_DAY;
+	current_date.Year = INITIAL_YEAR;
 
-	HAL_RTC_SetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
+	if(HAL_RTC_SetDate(&hrtc, &current_date, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x02;
+	}
+	
+	return 0x00;
 }
 
-	/**
-	!Функция возвращает текущее время и дату в качестве идентификатора
-	в формате чч:мм:сс дд:мм:гг, при этом в байтах возвращаестя следующая
-	последовательность 00 00 ЧЧ ММ СС ДД ММ ГГ, где 00 - старшие байты.
-	Пример: 00 00 19 48 00 21 01 01
-
-	*/
-void rtc_get_timestamp( uint32_t *timestamp )
+/**
+!Функция возвращает текущее время и дату в качестве идентификатора
+в формате чч:мм:сс дд:мм:гг, при этом в байтах возвращаестя следующая
+последовательность 00 00 ЧЧ ММ СС ДД ММ ГГ, где 00 - старшие байты.
+Пример: 00 00 19 48 00 01 01 21
+*/
+uint8_t rtc_get_timestamp( uint32_t *timestamp )
 {
-	HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD);
-    HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
+	if(HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x01;
+	}
+    if(HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x02;
+	}
 	
 	uint32_t time = 0x00;
 	
@@ -50,6 +65,38 @@ void rtc_get_timestamp( uint32_t *timestamp )
     time = time + current_date.Year;
 
 	timestamp[1] = time;
+	
+	return 0;
+}
+
+/**
+!Функция проверяет измение даты и выдает число соответствующее 
+определенной дате
+0 -> нет изменений
+1 -> новый день
+2 -> новый месяц
+3 -> новый год
+*/
+uint8_t rtc_date_update( uint32_t *timestamp )
+{
+	HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
+	
+	uint8_t day = (timestamp[2] & 0x00FF0000) >> 16;
+	uint8_t month = (timestamp[2] & 0x0000FF00) >> 8;
+	uint8_t year = (timestamp[2] & 0x000000FF);
+	
+	if(current_date.Date != day)
+	{
+		return 1;
+	} else if (current_date.Month != month)
+	{
+		return 2;
+	} else if (current_date.Year != year)
+	{
+		return 3;
+	}
+	
+	return 0;
 }
 
 	/**
@@ -104,6 +151,7 @@ void rtc_set_year( uint8_t year )
 	HAL_RTC_SetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
 }
 
+//TODO
 void rtc_set_date_and_time( uint64_t dateTime )
 {
 	HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD);

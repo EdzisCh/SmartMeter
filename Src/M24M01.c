@@ -1,6 +1,8 @@
 #include "M24M01.h"
 
-uint32_t current_address = 0x00;
+uint32_t current_address_of_day_retrosective = 0x00;
+uint32_t current_address_of_month_retrosective = 0x0C00; //3072
+uint32_t current_address_of_year_retrosective = 0xFC0;
 
 /**
 !Запись данных в EEPROM
@@ -12,7 +14,7 @@ uint8_t m24m01_save_to_mem( uint32_t address, uint8_t* data, uint8_t size_of_dat
 {
 	uint8_t return_status = 0x00;
 	
-	if(address >= MAX_MEM_ADDRESS || size_of_data > MAX_BYTES_SIZE)
+	if(address >= MAX_MEM_ADDRESS || size_of_data > MAX_BYTES_SIZE_TO_RECEIVE)
 	{
 		return 0x04;
 	}
@@ -33,7 +35,7 @@ uint8_t m24m01_get_from_mem( uint32_t address, uint8_t* data, uint8_t size_of_da
 {
 	uint8_t return_status = 0x00;
 	
-	if(address >= MAX_MEM_ADDRESS || size_of_data > MAX_BYTES_SIZE)
+	if(address >= MAX_MEM_ADDRESS || size_of_data > MAX_BYTES_SIZE_TO_RECEIVE)
 	{
 		return 0x04;
 	}

@@ -7,8 +7,9 @@
 void cs5490_init( CS5490 *chip, uint8_t conv_type )
 {
 	cs5490_reset(chip);
+	chip->cs5490_read_OK = READ_OPERATION_SUCCESS;
 	
-	//cs5490_write(chip, );
+	//калибровка
 	
 	switch ( conv_type )
 	{
@@ -493,10 +494,11 @@ uint32_t cs5490_get_RegChk( CS5490 *chip )
 
 */
 
-uint8_t full_callibration( CS5490 *chip, uint8_t *calibrationData )
+uint8_t cs5490_full_callibration( CS5490 *chip )
 {
 	//1 reset
 	cs5490_reset(chip);
+	chip->cs5490_read_OK = READ_OPERATION_SUCCESS;
 	
 	//2 single conv.
 	cs5490_single_conversation(chip);
@@ -541,6 +543,7 @@ uint8_t full_callibration( CS5490 *chip, uint8_t *calibrationData )
 		printf("error reading data at 8 phase\r\n");
 		return 0x09;
 	}
+	printf("Vrms: %f V\r\n", rmsV);
 	
 	rmsV = (rmsV*VOLTAGE_FULLSCALE)/REGISTER_FULLSCALE;
 	
@@ -637,7 +640,7 @@ uint8_t full_callibration( CS5490 *chip, uint8_t *calibrationData )
 	uint32_t Poff = cs5490_readReg(chip, 16, 36);
 	uint32_t PF_2 = cs5490_readReg(chip, 16, 21);
 	uint32_t regcheck_2 = cs5490_readReg(chip, 16, 1);
-	
+
 	if(!chip->cs5490_read_OK)
 	{
 		printf("16 last error\r\n");
@@ -651,4 +654,13 @@ uint8_t full_callibration( CS5490 *chip, uint8_t *calibrationData )
 	printf("PF_2 %x\r\n", PF_2);
 	printf("Regcheck %x\r\n", regcheck_2);
 	
+	//сохраняем данные в EEPROM в самый конец
+	m24m01_save_to_mem(MAX_MEM_ADDRESS - 52, (uint8_t *) &Igain, 4);
+	m24m01_save_to_mem(MAX_MEM_ADDRESS - 48, (uint8_t *) &Vgain, 4);
+	m24m01_save_to_mem(MAX_MEM_ADDRESS - 44, (uint8_t *) &Iac_off, 4);
+	m24m01_save_to_mem(MAX_MEM_ADDRESS - 40, (uint8_t *) &Poff, 4);
+	m24m01_save_to_mem(MAX_MEM_ADDRESS - 36, (uint8_t *) &PF_2, 4);
+	m24m01_save_to_mem(MAX_MEM_ADDRESS - 32, (uint8_t *) &regcheck_2, 4);
+
+	return 0x00;
 }

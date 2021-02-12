@@ -492,6 +492,16 @@
               <FileType>5</FileType>
               <FilePath>..\Inc\S25FL.h</FilePath>
             </File>
+            <File>
+              <FileName>tests.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Inc\tests.h</FilePath>
+            </File>
+            <File>
+              <FileName>tests.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\tests.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

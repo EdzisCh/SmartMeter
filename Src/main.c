@@ -10,8 +10,10 @@
 #include "stdio.h"
 #include "M24M01.h"
 #include "S25FL.h"
+#include "Tests.h"
 
 extern __IO uint32_t uwTick;
+uint8_t cycle;
 
 I2C_HandleTypeDef hi2c2;
 I2C_HandleTypeDef hi2c3;
@@ -65,6 +67,7 @@ int main(void)
 	HAL_GPIO_WritePin(LED_REACT_GPIO_Port, LED_REACT_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
 	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);
+	cycle = 0;
 
 	display_init();
 
@@ -72,22 +75,84 @@ int main(void)
 
 	HAL_Delay(100);
 
-	//display_all_data_write();
+	display_all_data_write();
 	rtc_set_init_dateTime();
 
 	CS5490 chip_0;
 	chip_0.cs5490_huart = &huart1;
+	CS5490 chip_1;
+	chip_1.cs5490_huart = &huart2;
 	
-	chip_0.cs5490_read_OK = 0x01;
+	cs5490_init(&chip_0, 0x01);
+	cs5490_init(&chip_1, 0x01);
 	
-	uint8_t calibrationData[6];
+	double Vrms;
+	double freq;
+	double Pavg;
 	
+	data data;
+	total_energy_register TER;
+	
+	uint32_t timestamp[2];
+	rtc_get_timestamp(timestamp);
+	
+	if(tests_run() != 0)
+	{
+		HAL_GPIO_TogglePin(LED_ACT_GPIO_Port, LED_ACT_Pin);
+	}
 	
   while (1)
   {
-	  full_callibration(&chip_0, calibrationData);
- 
-	  while(1);
+	  uint32_t time_start = uwTick;
+	  //калибровка
+	  //cs5490_full_callibration(&chip_1, calibrationData);
+	  
+	  //измерения
+	  Vrms = cs5490_get_Vrms(&chip_1);
+	  freq = cs5490_get_freq(&chip_1);
+	  freq *= 4000;
+	  Pavg = cs5490_get_Pavg(&chip_1);
+	  
+	  //накопление
+	  mem_handler_set_data(&data, Pavg, 0, 0, 0, 0, Vrms, freq);
+	  mem_handler_set_total_energy_register(&TER, &data);
+	  
+	  //индикация
+	  //В каждом цикле выводится только одно значение
+	  if ( cycle == 0 )
+	  {
+		  display_main_numbers_double(12345678);
+	  } else if ( cycle == 1) 
+	  {
+		  display_main_numbers_double(freq);
+	  } else if ( cycle == 2 ) 
+	  {
+		  display_main_numbers_double(Pavg);
+	  } else {
+		  display_main_numbers(228, 3, 0);
+	  }
+	  
+	  cycle++;
+	  if(cycle == 4)
+	  {
+		  cycle = 0;
+	  }
+	  
+	  //блок формирования ретроспективы
+	  uint8_t new_date = rtc_date_update(timestamp);
+	  
+	  if(new_date != 0)
+	  {
+		  mem_handler_send_retrospective_to_eeprom(new_date, timestamp, &TER);
+	  }
+	  
+	  //---тарифы
+		//блок формирования ретроспективы аналогично регистрам общего накопления
+	  
+	  //---rs485
+	  
+	  uint32_t time_stop = uwTick;
+	  //printf("Srart:%d Stop:%d Diff:%d\r\n", time_start, time_stop, time_stop - time_start);
   }
 
 }

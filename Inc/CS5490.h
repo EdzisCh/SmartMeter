@@ -9,6 +9,7 @@
 #include "math.h"
 #include "stdint.h"
 #include "stdio.h"
+#include "M24M01.h"
 
 #define CALIBRATION_TYPE_DC_OFFSET 0x00
 #define CALIBRATION_TYPE_AC_OFFSET 0x10
@@ -64,7 +65,7 @@ uint32_t cs5490_concatData( CS5490 *chip );
 uint32_t cs5490_readReg( CS5490 *chip, uint8_t page, uint8_t address );
 void cs5490_calibrate( CS5490 *chip, uint8_t type, uint8_t channel );
 
-uint8_t full_callibration( CS5490 *chip, uint8_t *calibrationData );
+uint8_t cs5490_full_callibration( CS5490 *chip );
 
 double cs5490_convert_to_double( CS5490 *chip, int LSB_pow, int MSB_option );
 double cs5490_convert_to_double_2( uint32_t input, int LSB_pow, int MSB_option );///!!!

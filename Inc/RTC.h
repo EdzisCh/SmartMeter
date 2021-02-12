@@ -3,11 +3,20 @@
 
 #include "stm32l4xx_hal.h"
 
+//Ничальная дата и время в BCD формате
+#define INITIAL_HOUR 0x10
+#define INITIAL_MINUTE 0x10
+#define INITIAL_SECUNDE 0x00
+#define INITIAL_DAY 0x12
+#define INITIAL_MONTH 0x02
+#define INITIAL_YEAR 0x21
+
 extern RTC_HandleTypeDef hrtc;
 
-void rtc_set_init_dateTime( void );
+uint8_t rtc_set_init_dateTime( void );
 
-void rtc_get_timestamp( uint32_t *timestamp );
+uint8_t rtc_get_timestamp( uint32_t *timestamp );
+uint8_t rtc_date_update( uint32_t *timestamp );
 
 void rtc_set_hours( uint8_t hours );
 void rtc_set_minutes( uint8_t minutes );

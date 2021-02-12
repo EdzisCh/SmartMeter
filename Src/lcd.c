@@ -226,6 +226,20 @@ void display_main_numbers(uint32_t number, uint8_t count, uint8_t dot_addr )
 
 }
 
+/*
+!Аналог функции display_main_numbers(). Преобразует входящий double в формат, удобный для вывода
+*/
+void display_main_numbers_double( double number )
+{
+	uint32_t transform_number = 1488;
+	uint8_t dot_addr = 0;
+	uint8_t count_of_numbers = 4;
+	
+	//преобразование
+	
+	display_main_numbers(transform_number, count_of_numbers, dot_addr);
+}
+
 /**
 !Вывод заданной цифры в заданный сегмент
 */
@@ -314,28 +328,11 @@ void display_write_one_number( uint8_t number, uint8_t address )
 */
 void display_parse_number( uint32_t input, uint8_t *numbers, uint8_t count )
 {
-	if (count < 8)
-	{
-		uint8_t temp = 8 - count;
-		for(uint8_t i = 0; i < temp; i++)
-		{
-			input /= 10;
-		}
-		
-		temp = 8 - temp;
-		for (uint8_t i = 0; i < count; i++)
-		{	
-			numbers[i] = input % 10;
-			input /= 10;
-		}
-	} else {	
-		for (uint8_t i = 0; i < count; i++)
-		{
-			numbers[i] = input % 10;
-			input /= 10;
-		}
+	for (uint8_t i = 0; i < count; i++)
+	{	
+		numbers[i] = input % 10;
+		input /= 10;
 	}
-
 }
 
 //===================================================================================
