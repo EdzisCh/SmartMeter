@@ -2,6 +2,7 @@
 #define _RTC_H_
 
 #include "stm32l4xx_hal.h"
+#include "stdio.h"
 
 //Ничальная дата и время в BCD формате
 #define INITIAL_HOUR 0x10

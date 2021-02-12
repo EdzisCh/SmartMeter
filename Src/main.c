@@ -92,6 +92,7 @@ int main(void)
 	
 	data data;
 	total_energy_register TER;
+	uint8_t rs485_message;
 	
 	uint32_t timestamp[2];
 	rtc_get_timestamp(timestamp);
@@ -138,7 +139,7 @@ int main(void)
 		  cycle = 0;
 	  }
 	  
-	  //блок формирования ретроспективы
+	  //блок формирования ретроспективы РОН
 	  uint8_t new_date = rtc_date_update(timestamp);
 	  
 	  if(new_date != 0)
@@ -150,6 +151,19 @@ int main(void)
 		//блок формирования ретроспективы аналогично регистрам общего накопления
 	  
 	  //---rs485
+	  if(rs485_is_received())
+	  {
+		  switch(rs485_message)
+		  {
+			  case 1:
+				  printf("answer\r\n");
+				  break;
+			  
+			  default:
+				  break;
+		  }
+		  
+	  }
 	  
 	  uint32_t time_stop = uwTick;
 	  //printf("Srart:%d Stop:%d Diff:%d\r\n", time_start, time_stop, time_stop - time_start);

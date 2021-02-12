@@ -14,7 +14,7 @@ uint8_t rtc_set_init_dateTime( void )
 	current_time.Seconds = INITIAL_SECUNDE;
 	
 	current_time.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-	current_time.StoreOperation = RTC_STOREOPERATION_RESET;
+	current_time.StoreOperation = RTC_STOREOPERATION_SET;
 	
 	if(HAL_RTC_SetTime(&hrtc, &current_time, RTC_FORMAT_BCD) != HAL_OK)
 	{
@@ -99,9 +99,9 @@ uint8_t rtc_date_update( uint32_t *timestamp )
 	return 0;
 }
 
-	/**
-	!
-	*/
+/**
+!
+*/
 void rtc_set_hours( uint8_t hours )
 {
 	HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD);
@@ -109,7 +109,6 @@ void rtc_set_hours( uint8_t hours )
 	
 	HAL_RTC_SetTime(&hrtc, &current_time, RTC_FORMAT_BCD);
 }
-
 
 void rtc_set_minutes( uint8_t minutes )
 {
@@ -171,8 +170,9 @@ void rtc_set_time( uint32_t time )
 
 uint8_t rtc_get_hours( void )
 {
+
 	HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD);
-	
+
 	return current_time.Hours;
 }
 

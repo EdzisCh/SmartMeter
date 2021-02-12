@@ -12,6 +12,16 @@
 #include "M24M01.h"
 #include "S25FL.h"
 
+extern I2C_HandleTypeDef hi2c2;
+extern I2C_HandleTypeDef hi2c3;
+extern QSPI_HandleTypeDef hqspi;
+extern RTC_HandleTypeDef hrtc;
+extern TIM_HandleTypeDef htim5;
+extern UART_HandleTypeDef huart5;
+extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart2;
+extern UART_HandleTypeDef huart3;
+
 uint8_t tests_run( void );
 
 //===================================================================================
@@ -20,8 +30,18 @@ uint8_t tests_run( void );
 uint8_t test_rtc_init( void );
 uint8_t test_rtc_get_timestamp( void );
 uint8_t test_rtc_date_update( void );
-uint8_t tests_rtc_set_hours( void );
-uint8_t tests_rtc_set_day( void );
+uint8_t test_rtc_set_hours( void );
+uint8_t test_rtc_set_day( void );
+
+//===================================================================================
+
+//cs5490 tests
+uint8_t test_cs5490_init( void );
+
+//===================================================================================
+
+//lcd tests
+uint8_t test_lcd_init( void );
 
 //===================================================================================
 

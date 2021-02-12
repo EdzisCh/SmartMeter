@@ -10,7 +10,11 @@ uint8_t tests_run( void )
 	
 	output |= test_rtc_init();
 	output |= test_rtc_get_timestamp();
-	output |= tests_retrospective();
+	output |= test_rtc_set_hours();
+	output |= test_rtc_set_day();
+	output |= test_rtc_date_update();
+	
+//	output |= tests_retrospective();
 	
 	return output;
 }
@@ -51,16 +55,89 @@ uint8_t test_rtc_get_timestamp( void )
 	return 0;
 }
 
-uint8_t tests_rtc_set_hours( void )
+uint8_t test_rtc_set_hours( void )
 {
+	uint8_t hours = 0x12;
+	rtc_set_hours(hours);
+	
+	uint8_t check_hour = rtc_get_hours();
+	
+	if(check_hour != hours)
+	{
+		return 0x01;
+	}
+	
+	return 0;
 }
 
-uint8_t tests_rtc_set_day( void )
+uint8_t test_rtc_set_day( void )
 {
+	uint8_t day = 12;
+	rtc_set_day(day);
+	
+	uint8_t check_day = rtc_get_day();
+	
+	if(check_day != day)
+	{
+		return 0x01;
+	}
+	
+	return 0;
 }
 
+//todo
 uint8_t test_rtc_date_update( void )
 {
+	rtc_set_day(0x00);
+	rtc_set_month(0x00);
+	rtc_set_year(0x00);
+	
+	uint32_t timestamp[2];
+	rtc_get_timestamp(timestamp);
+	
+	uint8_t day = (timestamp[1] & 0x00FF0000) >> 16;	
+	rtc_set_day(0x01);
+	uint8_t update = rtc_date_update(timestamp);
+	if(update != 1)
+	{
+		return 0x02;
+	}
+
+	rtc_get_timestamp(timestamp);	
+	uint8_t month = (timestamp[1] & 0x0000FF00) >> 8;	
+	rtc_set_month(0x01);
+	update = rtc_date_update(timestamp);
+	if(update != 2)
+	{
+		return 0x03;
+	}
+	
+	rtc_get_timestamp(timestamp);
+	uint8_t year = (timestamp[1] & 0x000000FF);
+	rtc_set_year(0x01);
+	update = rtc_date_update(timestamp);
+	if(update != 3)
+	{
+		return 0x03;
+	}
+}
+
+//===================================================================================
+
+//cs5490 tests
+uint8_t test_cs5490_init( void )
+{
+	uint8_t output = 0;
+	
+	return 0;
+}
+
+//===================================================================================
+
+//lcd tests
+uint8_t test_lcd_init( void )
+{
+	return 0;
 }
 
 //===================================================================================
