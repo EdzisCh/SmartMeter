@@ -92,7 +92,7 @@ int main(void)
 	
 	data data;
 	total_energy_register TER;
-	uint8_t rs485_message;
+	uint8_t rs485_message[4];
 	
 	uint32_t timestamp[2];
 	rtc_get_timestamp(timestamp);
@@ -101,6 +101,8 @@ int main(void)
 	{
 		HAL_GPIO_TogglePin(LED_ACT_GPIO_Port, LED_ACT_Pin);
 	}
+	
+	display_clear_units();
 	
   while (1)
   {
@@ -122,15 +124,21 @@ int main(void)
 	  //В каждом цикле выводится только одно значение
 	  if ( cycle == 0 )
 	  {
-		  display_main_numbers_double(12345678);
+		  display_main_numbers_double(123);
+		  display_V();
+		  HAL_Delay(50);
 	  } else if ( cycle == 1) 
 	  {
 		  display_main_numbers_double(freq);
+		  display_Hz();
+		  HAL_Delay(50);
 	  } else if ( cycle == 2 ) 
 	  {
 		  display_main_numbers_double(Pavg);
+		  display_W();
+		  HAL_Delay(50);
 	  } else {
-		  display_main_numbers(228, 3, 0);
+		  display_main_numbers_double(228.1488);
 	  }
 	  
 	  cycle++;
@@ -153,20 +161,34 @@ int main(void)
 	  //---rs485
 	  if(rs485_is_received())
 	  {
-		  switch(rs485_message)
+		  rs485_get_message(rs485_message, 4);
+		  
+		  printf("mess: ");
+		  for(uint8_t i = 0; i < 4; i++)
+		  {
+			  printf("%d ", rs485_message[i]);
+		  }
+		  printf("\r\n");
+		  
+		  switch(rs485_message[0])
 		  {
 			  case 1:
-				  printf("answer\r\n");
+				  printf("1 answer\r\n");
+			      break;
+			
+			  case 2:
+				  printf("2 answer\r\n");
 				  break;
 			  
 			  default:
 				  break;
 		  }
-		  
+		  rs485_message[0] = 0;
+			  
 	  }
 	  
 	  uint32_t time_stop = uwTick;
-	  //printf("Srart:%d Stop:%d Diff:%d\r\n", time_start, time_stop, time_stop - time_start);
+	  printf("\r\nSrart:%d Stop:%d Diff:%d\r\n", time_start, time_stop, time_stop - time_start);
   }
 
 }

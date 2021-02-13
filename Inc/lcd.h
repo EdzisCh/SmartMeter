@@ -68,11 +68,15 @@ uint8_t display_all_data_write( void );
 uint8_t display_clear( void );
 uint8_t display_data_write( uint16_t address, uint8_t *data, uint8_t sizeOfData );
 
+//===================================================================================
+
 void display_clear_main_numbers( void );
 void display_main_numbers( uint32_t number, uint8_t count, uint8_t dot_addr );
 void display_main_numbers_double( double number );
 void display_write_one_number( uint8_t number, uint8_t address );
 void display_parse_number( uint32_t input, uint8_t *numbers, uint8_t count );
+
+//===================================================================================
 
 void display_L1( void );
 void display_L2( void );
@@ -90,5 +94,15 @@ void display_WIFI( void );
 void display_GR( void );
 void display_PR( void );
 void display_T( void );
+
+//===================================================================================
+
+void display_clear_units( void );
+void display_V( void );
+void display_W( void );
+void display_W_h( uint8_t pos );
+void display_VAr( void );
+void display_VAr_h( uint8_t pos );
+void display_Hz( void );
 
 #endif

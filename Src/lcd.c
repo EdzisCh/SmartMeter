@@ -214,6 +214,7 @@ void display_main_numbers(uint32_t number, uint8_t count, uint8_t dot_addr )
 					break;
 				case 3:
 					display_write_one_number(0x10, 0x03);
+					break;
 				case 4:
 					display_write_one_number(0x10, 0x04);
 					break;
@@ -231,11 +232,67 @@ void display_main_numbers(uint32_t number, uint8_t count, uint8_t dot_addr )
 */
 void display_main_numbers_double( double number )
 {
-	uint32_t transform_number = 1488;
+	uint32_t transform_number = 0;
 	uint8_t dot_addr = 0;
-	uint8_t count_of_numbers = 4;
+	uint8_t count_of_numbers = 0;
 	
 	//преобразование
+	uint32_t integer_part = (uint32_t) number;
+	uint32_t fract_part = (uint32_t) ((number - integer_part) * 10000);
+
+	uint32_t temp_integer_part = integer_part;
+	uint32_t temp_fract_part = fract_part;
+	
+	//узнаем количесво знаков в целой части
+	while(temp_integer_part > 0)
+	{
+		temp_integer_part /= 10;
+		count_of_numbers++;
+	}
+	if(count_of_numbers == 0)
+	{
+		count_of_numbers = 1;
+	}
+	
+	dot_addr = count_of_numbers;
+	uint8_t count_of_fractal_part = (8 - count_of_numbers);
+	if(count_of_fractal_part > 4) count_of_fractal_part = 4;
+	count_of_numbers += count_of_fractal_part;
+	
+	//удаляем лишние знаки и 0 в конце дробной части
+	uint8_t temp_count_of_fractal_part = count_of_fractal_part;
+	while(temp_count_of_fractal_part > 4)
+	{
+		temp_fract_part /= 10;
+		temp_count_of_fractal_part--;
+	}
+	
+	//избавляемся от лишних нулей
+	uint8_t flag = 0;
+	do
+	{
+		flag = temp_fract_part % 10;
+		if(flag) break;
+		temp_fract_part /= 10;
+		count_of_fractal_part--;
+		count_of_numbers--;
+	}while(flag == 0 && count_of_fractal_part > 0);
+	
+	dot_addr = 5 - count_of_fractal_part;
+	
+	if(dot_addr == 5)
+	{
+		dot_addr = 0;
+	}
+	fract_part = temp_fract_part;
+	
+	for(uint8_t i = 0; i < count_of_fractal_part; i++)
+	{
+		integer_part *= 10;
+	}
+	integer_part += fract_part;
+	
+	transform_number = integer_part;
 	
 	display_main_numbers(transform_number, count_of_numbers, dot_addr);
 }
@@ -549,4 +606,123 @@ void display_T( void )
 	value |= current_value;
 	
 	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 8, 1, &value, 1, 255);
+}
+
+
+
+void display_clear_units( void )
+{
+	uint8_t value = 0x07;
+	
+	uint8_t current_value = display_byte_read( 5 );
+	value &= current_value;
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 5, 1, &value, 1, 255);
+	
+	value = 0xF0;
+    current_value = display_byte_read( 6 );
+	value &= current_value;
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 6, 1, &value, 1, 255);
+}
+
+void display_V( void )
+{
+	display_clear_units();
+	
+	uint8_t value = 0x20;
+	uint8_t current_value = display_byte_read( 5 );
+	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 5, 1, &value, 1, 255);
+}
+
+void display_W( void )
+{
+	display_clear_units();
+	
+	uint8_t value = 0x60;
+
+	uint8_t current_value = display_byte_read( 5 );
+	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 5, 1, &value, 1, 255);
+}
+
+void display_W_h( uint8_t pos )
+{
+	display_clear_units();
+	
+	uint8_t value = 0x60;
+	
+	uint8_t current_value = display_byte_read( 5 );
+	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 5, 1, &value, 1, 255);
+	
+	value = 0x40;
+	
+	current_value = display_byte_read( 6 );
+	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 6, 1, &value, 1, 255);
+}
+
+void display_VAr( void )
+{
+	display_clear_units();
+	
+	uint8_t value = 0x20;
+	
+	uint8_t current_value = display_byte_read( 5 );
+	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 5, 1, &value, 1, 255);
+	
+	value = 0x03;
+	
+	current_value = display_byte_read( 6 );
+	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 6, 1, &value, 1, 255);
+}
+
+void display_A( void )
+{
+	display_clear_units();
+	
+	uint8_t value = 0x01;
+	
+	uint8_t current_value = display_byte_read( 6 );
+	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 6, 1, &value, 1, 255);
+}
+
+void display_VAr_h( uint8_t pos )
+{
+	display_clear_units();
+	
+	uint8_t value = 0x20;
+	
+	uint8_t current_value = display_byte_read( 5 );
+	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 5, 1, &value, 1, 255);
+	
+	value = 0x07;
+	
+	current_value = display_byte_read( 6 );
+	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 6, 1, &value, 1, 255);
+}
+
+void display_Hz( void )
+{
+	display_clear_units();
+	uint8_t value = 0x08;
+	
+	uint8_t current_value = display_byte_read( 6 );
+	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 6, 1, &value, 1, 255);
 }
