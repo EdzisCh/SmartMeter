@@ -1,13 +1,20 @@
 #include "CS5490.h"
 
-	/**
-	! Инициализация измерителя 
-
-	*/
-void cs5490_init( CS5490 *chip, uint8_t conv_type )
+/**
+! Инициализация измерителя и изначальная калибровка
+//TODO
+*/
+uint8_t cs5490_init( CS5490 *chip, uint8_t conv_type )
 {
+	uint8_t output = 0;
 	cs5490_reset(chip);
 	chip->cs5490_read_OK = READ_OPERATION_SUCCESS;
+	
+	cs5490_readReg(chip, 16, 1);
+	if(chip->cs5490_read_OK != READ_OPERATION_SUCCESS)
+	{
+		return 0x01;
+	}
 	
 	//калибровка
 	
@@ -26,7 +33,6 @@ void cs5490_init( CS5490 *chip, uint8_t conv_type )
 			break;
 	}
 	
-	chip->cs5490_read_OK = 0x01;
 }
 
 

@@ -67,26 +67,43 @@ int main(void)
 	HAL_GPIO_WritePin(LED_REACT_GPIO_Port, LED_REACT_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
 	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);
-	cycle = 0;
+	cycle = 1;
 
 	display_init();
 
 	display_clear();
-
+	
 	HAL_Delay(100);
 
-	display_all_data_write();
-	rtc_set_init_dateTime();
+	//rtc_set_init_dateTime();
 
 	CS5490 chip_0;
 	chip_0.cs5490_huart = &huart1;
 	CS5490 chip_1;
 	chip_1.cs5490_huart = &huart2;
+	CS5490 chip_2;
+	chip_2.cs5490_huart = &huart3;
 	
-	cs5490_init(&chip_0, 0x01);
-	cs5490_init(&chip_1, 0x01);
+	if(cs5490_init(&chip_0, 0x01) == 0)
+	{
+		display_L1();
+	}
+	if(cs5490_init(&chip_1, 0x01) == 0)
+	{
+		display_L2();
+	}
+	if(cs5490_init(&chip_2, 0x01) == 0)
+	{
+		display_L3();
+	}
+	
+	//Включение необходимых элементов дисплея
+	display_battery();
+	display_N();
+	display_level(5);
 	
 	double Vrms;
+	double Irms;
 	double freq;
 	double Pavg;
 	
@@ -97,9 +114,12 @@ int main(void)
 	uint32_t timestamp[2];
 	rtc_get_timestamp(timestamp);
 	
-	if(tests_run() != 0)
+	uint8_t test_result = tests_run();
+	if(test_result)
 	{
-		HAL_GPIO_TogglePin(LED_ACT_GPIO_Port, LED_ACT_Pin);
+		display_ExMark();
+		display_main_numbers_double(test_result);
+		HAL_Delay(500);
 	}
 	
 	display_clear_units();
@@ -112,6 +132,7 @@ int main(void)
 	  
 	  //измерения
 	  Vrms = cs5490_get_Vrms(&chip_1);
+	  Irms = cs5490_get_Irms(&chip_1);
 	  freq = cs5490_get_freq(&chip_1);
 	  freq *= 4000;
 	  Pavg = cs5490_get_Pavg(&chip_1);
@@ -121,30 +142,31 @@ int main(void)
 	  mem_handler_set_total_energy_register(&TER, &data);
 	  
 	  //индикация
-	  //В каждом цикле выводится только одно значение
-	  if ( cycle == 0 )
+	  //выводится только одно значение в 5 циклов
+	  //воеменная реализация 
+	  display_energy_clear();
+	  if ( cycle <= 5 )
 	  {
-		  display_main_numbers_double(123);
+		  display_main_numbers_double(Vrms);
 		  display_V();
-		  HAL_Delay(50);
-	  } else if ( cycle == 1) 
+	  } else if ( cycle > 5 && cycle <= 10 ) 
 	  {
 		  display_main_numbers_double(freq);
 		  display_Hz();
-		  HAL_Delay(50);
-	  } else if ( cycle == 2 ) 
+	  } else if ( cycle > 10 && cycle <= 15 ) 
 	  {
 		  display_main_numbers_double(Pavg);
 		  display_W();
-		  HAL_Delay(50);
+		  display_active_consumed_energy();
 	  } else {
-		  display_main_numbers_double(228.1488);
+		  display_main_numbers_double(Irms);
+		  display_A();
 	  }
 	  
 	  cycle++;
-	  if(cycle == 4)
+	  if(cycle == 21)
 	  {
-		  cycle = 0;
+		  cycle = 1;
 	  }
 	  
 	  //блок формирования ретроспективы РОН
@@ -188,7 +210,7 @@ int main(void)
 	  }
 	  
 	  uint32_t time_stop = uwTick;
-	  printf("\r\nSrart:%d Stop:%d Diff:%d\r\n", time_start, time_stop, time_stop - time_start);
+	  //printf("\r\nSrart:%d Stop:%d Diff:%d\r\n", time_start, time_stop, time_stop - time_start);
   }
 
 }

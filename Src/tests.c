@@ -6,17 +6,33 @@
 */
 uint8_t tests_run( void )
 {
-	uint8_t output = 0;
+	if(test_rtc_init())
+	{
+		return 1;
+	}
+
+	if(test_rtc_get_timestamp())
+	{
+		return 2;
+	}
+	if(test_rtc_set_hours())
+	{
+		return 3;
+	}
+	if(test_rtc_set_day())
+	{
+		return 4;
+	}
+	if(test_rtc_date_update())
+	{
+		return 5;
+	}
+	if(tests_retrospective())
+	{
+		return 6;
+	}
 	
-	output |= test_rtc_init();
-	output |= test_rtc_get_timestamp();
-	output |= test_rtc_set_hours();
-	output |= test_rtc_set_day();
-	output |= test_rtc_date_update();
-	
-//	output |= tests_retrospective();
-	
-	return output;
+	return 0;
 }
 
 //===================================================================================
@@ -93,9 +109,12 @@ uint8_t test_rtc_date_update( void )
 	rtc_set_year(0x00);
 	
 	uint32_t timestamp[2];
+
 	rtc_get_timestamp(timestamp);
+	uint8_t day = (timestamp[1] & 0x00FF0000) >> 16;
+	uint8_t month;
+	uint8_t year;
 	
-	uint8_t day = (timestamp[1] & 0x00FF0000) >> 16;	
 	rtc_set_day(0x01);
 	uint8_t update = rtc_date_update(timestamp);
 	if(update != 1)
@@ -104,7 +123,7 @@ uint8_t test_rtc_date_update( void )
 	}
 
 	rtc_get_timestamp(timestamp);	
-	uint8_t month = (timestamp[1] & 0x0000FF00) >> 8;	
+	month = (timestamp[1] & 0x0000FF00) >> 8;
 	rtc_set_month(0x01);
 	update = rtc_date_update(timestamp);
 	if(update != 2)
@@ -113,13 +132,15 @@ uint8_t test_rtc_date_update( void )
 	}
 	
 	rtc_get_timestamp(timestamp);
-	uint8_t year = (timestamp[1] & 0x000000FF);
+	year = (timestamp[1] & 0x000000FF);	
 	rtc_set_year(0x01);
 	update = rtc_date_update(timestamp);
 	if(update != 3)
 	{
-		return 0x03;
+		return 0x04;
 	}
+	
+	return 0;
 }
 
 //===================================================================================
@@ -146,7 +167,8 @@ uint8_t tests_retrospective( void )
 {
 	uint32_t timestamp_current[2];
 	rtc_get_timestamp(timestamp_current);
-	
+	uint32_t notes_from_mem[48];
+	uint32_t notes_to_mem[48];
 	uint32_t Pcon = 0;
 	uint32_t Prel = 0;
 	uint32_t Qcon = 0;
@@ -155,7 +177,7 @@ uint8_t tests_retrospective( void )
 	total_energy_register TER;
 
 	
-	uint8_t day = 0x00;
+	uint8_t day = 0x00, notes_to_mem_addr = 0;
 	rtc_set_day(day);
 	for(uint8_t i = 1; i<10; i++)
 	{
@@ -163,6 +185,13 @@ uint8_t tests_retrospective( void )
 		TER.consumed_reactive_energy = Prel;
 		TER.released_active_energy = Qcon;
 		TER.released_reactive_energy = Qrel;
+		
+		notes_to_mem[notes_to_mem_addr++] = timestamp_current[0];
+		notes_to_mem[notes_to_mem_addr++] = timestamp_current[1];
+		notes_to_mem[notes_to_mem_addr++] = Pcon;
+		notes_to_mem[notes_to_mem_addr++] = Qcon;
+		notes_to_mem[notes_to_mem_addr++] = Prel;
+		notes_to_mem[notes_to_mem_addr++] = Qrel;
 		
 		uint8_t new_date = rtc_date_update(timestamp_current);
 		if(new_date == 0)
@@ -172,6 +201,7 @@ uint8_t tests_retrospective( void )
 
 		mem_handler_send_retrospective_to_eeprom(new_date, timestamp_current, &TER);
 		
+	    rtc_get_timestamp(timestamp_current);
 		day += i;
 		rtc_set_day(day);
 		Pcon++;
@@ -180,12 +210,15 @@ uint8_t tests_retrospective( void )
 		Qrel++;
 	}
 	
-	uint32_t notes_from_mem[48];
 	m24m01_get_from_mem(0x00, (uint8_t *) notes_from_mem, 48);
 	
-	for(uint8_t i = 0; i < 48; i++)
+	for(uint8_t i = 0; i < 60; i++)
 	{
-		
+		if(notes_from_mem[i] != notes_to_mem[i])
+		{
+			printf("[%u]: to=%u, from=%u\r\n", i, notes_to_mem[i], notes_from_mem[i]);
+			return 0x02;
+		}
 	}
 	
 	return 0;

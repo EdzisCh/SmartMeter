@@ -13,6 +13,8 @@
 #define INITIAL_YEAR 0x21
 
 extern RTC_HandleTypeDef hrtc;
+extern RTC_TimeTypeDef current_time;
+extern RTC_DateTypeDef current_date;
 
 uint8_t rtc_set_init_dateTime( void );
 

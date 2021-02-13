@@ -81,9 +81,9 @@ uint8_t rtc_date_update( uint32_t *timestamp )
 {
 	HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
 	
-	uint8_t day = (timestamp[2] & 0x00FF0000) >> 16;
-	uint8_t month = (timestamp[2] & 0x0000FF00) >> 8;
-	uint8_t year = (timestamp[2] & 0x000000FF);
+	uint8_t day = (timestamp[1] & 0x00FF0000) >> 16;
+	uint8_t month = (timestamp[1] & 0x0000FF00) >> 8;
+	uint8_t year = (timestamp[1] & 0x000000FF);
 	
 	if(current_date.Date != day)
 	{

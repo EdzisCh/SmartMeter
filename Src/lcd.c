@@ -608,8 +608,11 @@ void display_T( void )
 	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 8, 1, &value, 1, 255);
 }
 
+//===================================================================================
 
-
+/**
+!Функции для включения единиц измерения
+*/
 void display_clear_units( void )
 {
 	uint8_t value = 0x07;
@@ -725,4 +728,70 @@ void display_Hz( void )
 	value |= current_value;
 	
 	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 6, 1, &value, 1, 255);
+}
+
+
+//===================================================================================
+
+/**
+!Набор функций для отображения направления энергии
+*/
+void display_active_consumed_energy( void )
+{
+	uint8_t value = 0x20;
+	
+	uint8_t current_value = display_byte_read( 6 );
+	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 6, 1, &value, 1, 255);
+}
+
+void display_reactive_consumed_energy( void )
+{
+	display_clear_units();
+	uint8_t value = 0x40;
+	
+	uint8_t current_value = display_byte_read( 6 );
+	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 6, 1, &value, 1, 255);
+}
+
+void display_active_released_energy( void )
+{
+	display_clear_units();
+	uint8_t value = 0x01;
+	
+	uint8_t current_value = display_byte_read( 7 );
+	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 7, 1, &value, 1, 255);
+}
+
+void display_reactive_released_energy( void )
+{
+	display_clear_units();
+	uint8_t value = 0x10;
+	
+	uint8_t current_value = display_byte_read( 6 );
+	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 6, 1, &value, 1, 255);
+}
+
+void display_energy_clear( void )
+{
+	uint8_t value = 0x8F;
+	
+	uint8_t current_value = display_byte_read( 6 );
+	value &= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 6, 1, &value, 1, 255);
+	
+	value = 0xFE;
+	
+	current_value = display_byte_read( 7 );
+	value &= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 7, 1, &value, 1, 255);
 }

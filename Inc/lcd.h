@@ -102,7 +102,15 @@ void display_V( void );
 void display_W( void );
 void display_W_h( uint8_t pos );
 void display_VAr( void );
+void display_A( void );
 void display_VAr_h( uint8_t pos );
 void display_Hz( void );
 
+//===================================================================================
+
+void display_active_consumed_energy( void );
+void display_reactive_consumed_energy( void );
+void display_active_released_energy( void );
+void display_reactive_released_energy( void );
+void display_energy_clear( void );
 #endif

@@ -57,7 +57,7 @@ typedef struct CS5490
 	float cs5490_MCLK;
 } CS5490;
 
-void cs5490_init( CS5490 *chip, uint8_t conv_type );
+uint8_t cs5490_init( CS5490 *chip, uint8_t conv_type );
 void cs5490_write( CS5490 *chip, int page, int address, uint32_t value );
 void cs5490_read( CS5490 *chip, uint8_t page, uint8_t address );
 void cs5490_instruct( CS5490 *chip, int instruction );
