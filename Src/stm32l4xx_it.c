@@ -2,6 +2,7 @@
 #include "stm32l4xx.h"
 #include "stm32l4xx_it.h"
 #include "event_handler.h"
+#include "lcd.h"
 
 extern TIM_HandleTypeDef htim5;
 
@@ -72,27 +73,20 @@ void PendSV_Handler(void)
 
 void SysTick_Handler(void)
 {
- 
-  HAL_IncTick();
-  HAL_SYSTICK_IRQHandler();
-  
+	HAL_IncTick();
+	HAL_SYSTICK_IRQHandler();
+	
 	GPIO_PinState key_1, key_2, key_3;
 
 	key_1 = HAL_GPIO_ReadPin(KEY_1_GPIO_Port, KEY_1_Pin);
 	key_2 = HAL_GPIO_ReadPin(KEY_2_GPIO_Port, KEY_2_Pin);
 	key_3 = HAL_GPIO_ReadPin(KEY_3_GPIO_Port, KEY_3_Pin);
 
-	if ( key_1 == GPIO_PIN_RESET
-		 || key_2 == GPIO_PIN_RESET
-		 || key_3 == GPIO_PIN_RESET
-	   )
+	if ( key_1 == GPIO_PIN_RESET || key_2 == GPIO_PIN_RESET || key_3 == GPIO_PIN_RESET )
 	{
 		event_handler_beep_on();
 		
-		while( key_1 == GPIO_PIN_RESET
-			   || key_2 == GPIO_PIN_RESET
-		   	   || key_3 == GPIO_PIN_RESET
-		     )
+		while( key_1 == GPIO_PIN_RESET|| key_2 == GPIO_PIN_RESET || key_3 == GPIO_PIN_RESET )
 		{
 			key_1 = HAL_GPIO_ReadPin(KEY_1_GPIO_Port, KEY_1_Pin);
 			key_2 = HAL_GPIO_ReadPin(KEY_2_GPIO_Port, KEY_2_Pin);

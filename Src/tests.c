@@ -15,10 +15,10 @@ uint8_t tests_run( void )
 	{
 		return 2;
 	}
-	if(test_rtc_set_hours())
-	{
-		return 3;
-	}
+//	if(test_rtc_set_hours())
+//	{
+//		return 3;
+//	}
 	if(test_rtc_set_day())
 	{
 		return 4;
@@ -27,10 +27,10 @@ uint8_t tests_run( void )
 	{
 		return 5;
 	}
-//	if(tests_day_retrospective())
-//	{
-//		return 6;
-//	}
+	if(tests_day_retrospective())
+	{
+		return 6;
+	}
 	if(tests_retrospective_last_address())
 	{
 		return 7;
@@ -266,6 +266,13 @@ uint8_t tests_retrospective_last_address( void )
 	notes_to_mem[notes_to_mem_addr++] = Prel;
 	notes_to_mem[notes_to_mem_addr++] = Qrel;
 	
+	RTC_TimeTypeDef time;
+	RTC_DateTypeDef date;
+	HAL_RTC_GetTime(&hrtc, &time, RTC_FORMAT_BCD);
+	HAL_RTC_GetDate(&hrtc, &date, RTC_FORMAT_BCD);
+	printf("TIME: %x:%x:%x_%x.%x.%x\r\n", time.Hours, time.Minutes, time.Hours, date.Date, date.Month, date.Year);
+	printf("DATA[0]: %u, %u, %u, %u\r\n", Pcon, Prel, Qcon, Qrel);
+	
 	uint8_t new_date = rtc_date_update(timestamp_current);
 	if(new_date == 0)
 	{
@@ -298,6 +305,10 @@ uint8_t tests_retrospective_last_address( void )
 		}
 
 		mem_handler_send_retrospective_to_eeprom(new_date, timestamp_current, &TER);
+	HAL_RTC_GetTime(&hrtc, &time, RTC_FORMAT_BCD);
+	HAL_RTC_GetDate(&hrtc, &date, RTC_FORMAT_BCD);
+	printf("TIME: %x:%x:%x_%x.%x.%x\r\n", time.Hours, time.Minutes, time.Hours, date.Date, date.Month, date.Year);
+	printf("DATA[%u]: %u, %u, %u, %u\r\n", i, Pcon, Prel, Qcon, Qrel);
 		
 	    rtc_get_timestamp(timestamp_current);
 		rtc_set_day(days[days_counter++]);
