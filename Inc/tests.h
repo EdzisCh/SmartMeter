@@ -45,6 +45,7 @@ uint8_t test_lcd_init( void );
 
 //===================================================================================
 
-uint8_t tests_retrospective( void );
+uint8_t tests_day_retrospective( void );
+uint8_t tests_retrospective_last_address( void );
 
 #endif

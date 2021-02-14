@@ -1,14 +1,15 @@
 #include "RTC.h"
 
-RTC_TimeTypeDef current_time;
-RTC_DateTypeDef current_date;
+//RTC_TimeTypeDef current_time;
+//RTC_DateTypeDef current_date;
 
 /**
 !Установка первоночальной даты 
 */
 uint8_t rtc_set_init_dateTime( void )
 {
-	
+	RTC_TimeTypeDef current_time;
+    RTC_DateTypeDef current_date;
 	current_time.Hours = INITIAL_HOUR;
 	current_time.Minutes = INITIAL_MINUTE;
 	current_time.Seconds = INITIAL_SECUNDE;
@@ -42,6 +43,8 @@ uint8_t rtc_set_init_dateTime( void )
 */
 uint8_t rtc_get_timestamp( uint32_t *timestamp )
 {
+	RTC_TimeTypeDef current_time;
+	RTC_DateTypeDef current_date;
 	if(HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD) != HAL_OK)
 	{
 		return 0x01;
@@ -79,6 +82,7 @@ uint8_t rtc_get_timestamp( uint32_t *timestamp )
 */
 uint8_t rtc_date_update( uint32_t *timestamp )
 {
+	RTC_DateTypeDef current_date;
 	HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
 	
 	uint8_t day = (timestamp[1] & 0x00FF0000) >> 16;
@@ -102,124 +106,204 @@ uint8_t rtc_date_update( uint32_t *timestamp )
 /**
 !
 */
-void rtc_set_hours( uint8_t hours )
+uint8_t rtc_set_hours( uint8_t hours )
 {
-	HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD);
+	RTC_TimeTypeDef current_time;
+	if(HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x01;
+	}
 	current_time.Hours = hours;
+	current_time.Seconds = 31;
 	
-	HAL_RTC_SetTime(&hrtc, &current_time, RTC_FORMAT_BCD);
+	if(HAL_RTC_SetTime(&hrtc, &current_time, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x02;
+	}
+	
+	return 0;
 }
 
-void rtc_set_minutes( uint8_t minutes )
+uint8_t rtc_set_minutes( uint8_t minutes )
 {
-	HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD);
+	RTC_TimeTypeDef current_time;
+	if(HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x01;
+	}
 	current_time.Minutes = minutes;
+	current_time.Seconds = 31;
 	
-	HAL_RTC_SetTime(&hrtc, &current_time, RTC_FORMAT_BCD);
+	if(HAL_RTC_SetTime(&hrtc, &current_time, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x02;
+	}
+	
+	return 0;
 }
 
-void rtc_set_seconds( uint8_t seconds )
+uint8_t rtc_set_seconds( uint8_t seconds )
 {
-	HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD);
+	RTC_TimeTypeDef current_time;
+	if(HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x01;
+	}
 	current_time.Seconds = seconds;
 	
-	HAL_RTC_SetTime(&hrtc, &current_time, RTC_FORMAT_BCD);
+	if(HAL_RTC_SetTime(&hrtc, &current_time, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x02;
+	}
+	
+	return 0;
 }
 
-void rtc_set_day( uint8_t day )
+uint8_t rtc_set_day( uint8_t day )
 {
-	HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
+	RTC_DateTypeDef current_date;
+	if(HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x01;
+	}
 	current_date.Date = day;
 	
-	HAL_RTC_SetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
+	if(HAL_RTC_SetDate(&hrtc, &current_date, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x02;
+	}
+	
+	return 0;
 }
 
-void rtc_set_month( uint8_t month )
+uint8_t rtc_set_month( uint8_t month )
 {
-	HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
+	RTC_DateTypeDef current_date;
+	if(HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x01;
+	}
 	current_date.Month = month;
 	
-	HAL_RTC_SetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
+	if(HAL_RTC_SetDate(&hrtc, &current_date, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x02;
+	}
+	
+	return 0;
 }
 
-void rtc_set_year( uint8_t year )
+uint8_t rtc_set_year( uint8_t year )
 {
-	HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
+	RTC_DateTypeDef current_date;
+	if(HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x01;
+	}
 	current_date.Year = year;
 	
-	HAL_RTC_SetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
+	if(HAL_RTC_SetDate(&hrtc, &current_date, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x02;
+	}
+	
+	return 0;
 }
 
 //TODO
-void rtc_set_date_and_time( uint64_t dateTime )
+uint8_t rtc_set_date_and_time( uint64_t dateTime )
 {
+	RTC_TimeTypeDef current_time;
+	RTC_DateTypeDef current_date;
 	HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD);
     HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
 
-
+	return 0;
 }
 
-void rtc_set_date( uint32_t date )
+uint8_t rtc_set_date( uint32_t date )
 {
-	
+	return 0;
 }
 
-void rtc_set_time( uint32_t time )
+uint8_t rtc_set_time( uint32_t time )
 {
+	return 0;
 }
 
 uint8_t rtc_get_hours( void )
 {
-
-	HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD);
+	RTC_TimeTypeDef current_time;
+	if(HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0xFF;
+	}
 
 	return current_time.Hours;
 }
 
 uint8_t rtc_get_minutes( void )
 {
-	HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD);
-	
+	RTC_TimeTypeDef current_time;
+	if(HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0xFF;
+	}
+
 	return current_time.Minutes;
 }
 
 uint8_t rtc_get_seconds( void )
 {
-	HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD);
+	RTC_TimeTypeDef current_time;
+	if(HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0xFF;
+	}
 	
 	return current_time.Seconds;
 }
 
 uint8_t rtc_get_day( void )
 {
-	HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
+	RTC_DateTypeDef current_date;
+	if(HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0xFF;
+	}
 	
 	return current_date.Date;
 }
 
 uint8_t rtc_get_month( void )
 {
-	HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
+	RTC_DateTypeDef current_date;
+	if(HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0xFF;
+	}
 	
 	return current_date.Month;
 }
 
 uint8_t rtc_get_year( void )
 {
-	HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD);
+	RTC_DateTypeDef current_date;
+	if(HAL_RTC_GetDate(&hrtc, &current_date, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0xFF;
+	}
 	
 	return current_date.Year;
 }
 
-uint64_t rtc_get_date_and_time( void )
-{
-}
-
 uint32_t rtc_get_date( void )
 {
+	return 0;
 }
 
 uint32_t rtc_get_time( void )
 {
+	return 0;
 }
 

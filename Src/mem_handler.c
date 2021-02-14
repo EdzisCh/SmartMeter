@@ -1,4 +1,5 @@
 #include "mem_handler.h" 
+#include "stdio.h"
 
 	/**
 	!Сохранение данных из змериеля в промежуточные накопители
@@ -74,9 +75,4 @@ void mem_handler_send_retrospective_to_eeprom( uint8_t date, uint32_t *timestamp
 		if(current_address_of_year_retrosective >= MEM_MAX_ADDRESS_OF_YEAR_RETROSPEC)
 			current_address_of_year_retrosective = 0x0FC0;
 	}
-}
-
-uint8_t mem_handler_get_all_stored_data( void )
-{
-	
 }

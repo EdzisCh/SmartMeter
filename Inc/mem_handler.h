@@ -59,7 +59,4 @@ void mem_handler_get_tarrif_accumulator( void );
 
 void mem_handler_send_retrospective_to_eeprom( uint8_t date, uint32_t *timestamp, total_energy_register *regs );
 
-//тестовая функция
-uint8_t mem_handler_get_all_stored_data( void );
-
 #endif
