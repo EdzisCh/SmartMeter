@@ -15,10 +15,10 @@ uint8_t tests_run( void )
 	{
 		return 2;
 	}
-//	if(test_rtc_set_hours())
-//	{
-//		return 3;
-//	}
+	if(test_rtc_set_time_and_date())
+	{
+		return 3;
+	}
 	if(test_rtc_set_day())
 	{
 		return 4;
@@ -75,16 +75,23 @@ uint8_t test_rtc_get_timestamp( void )
 	return 0;
 }
 
-uint8_t test_rtc_set_hours( void )
+uint8_t test_rtc_set_time_and_date( void )
 {
-	uint8_t hours = 0x12;
-	uint8_t out = rtc_set_hours(hours);
+	uint32_t date_time[2] = { 0x00141500, 0x00211221 };
+	rtc_set_date_and_time(date_time);
 	
-	uint8_t check_hour = rtc_get_hours();
+	uint32_t check_time = rtc_get_time();
+	uint32_t check_date = rtc_get_date();
 	
-	if(check_hour != hours)
+	if(check_date != date_time[1])
 	{
 		return 0x01;
+	}
+	
+	check_time &= 0x00FFFF00;
+	if(check_time != date_time[0])
+	{
+		return 0x02;
 	}
 	
 	return 0;
@@ -233,101 +240,35 @@ uint8_t tests_day_retrospective( void )
 */
 uint8_t tests_retrospective_last_address( void )
 {
-	uint32_t timestamp_current[2];
-	rtc_get_timestamp(timestamp_current);
-	
 	uint32_t notes_from_mem[6];
 	uint32_t notes_to_mem[6];
-	
-	uint8_t days[32] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
-						0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 
-						0x15, 0x16, 0x17, 0x18, 0x19, 0x20, 0x21, 
-						0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 
-						0x29, 0x30, 0x31, 0x32};
-	
-	uint32_t Pcon = 0xFF;
-	uint32_t Prel = 0xFF;
-	uint32_t Qcon = 0xFF;
-	uint32_t Qrel = 0xFF;
-	
 	total_energy_register TER;
+	TER.consumed_active_energy = 13;
+	TER.released_active_energy = 14;
+	TER.consumed_reactive_energy = 15;
+	TER.released_reactive_energy = 16;
 	
-	uint8_t notes_to_mem_addr = 0;
-	rtc_set_day(days[31]);
-	TER.consumed_active_energy = Pcon;
-	TER.consumed_reactive_energy = Prel;
-	TER.released_active_energy = Qcon;
-	TER.released_reactive_energy = Qrel;
-		
-	notes_to_mem[notes_to_mem_addr++] = timestamp_current[0];
-	notes_to_mem[notes_to_mem_addr++] = timestamp_current[1];
-	notes_to_mem[notes_to_mem_addr++] = Pcon;
-	notes_to_mem[notes_to_mem_addr++] = Qcon;
-	notes_to_mem[notes_to_mem_addr++] = Prel;
-	notes_to_mem[notes_to_mem_addr++] = Qrel;
-	
-	RTC_TimeTypeDef time;
-	RTC_DateTypeDef date;
-	HAL_RTC_GetTime(&hrtc, &time, RTC_FORMAT_BCD);
-	HAL_RTC_GetDate(&hrtc, &date, RTC_FORMAT_BCD);
-	printf("TIME: %x:%x:%x_%x.%x.%x\r\n", time.Hours, time.Minutes, time.Hours, date.Date, date.Month, date.Year);
-	printf("DATA[0]: %u, %u, %u, %u\r\n", Pcon, Prel, Qcon, Qrel);
-	
-	uint8_t new_date = rtc_date_update(timestamp_current);
-	if(new_date == 0)
-	{
-		printf("padla");
-		return 0x01;
-	}
+	uint32_t timestamp[2];
+	rtc_get_timestamp(timestamp);
 
-	mem_handler_send_retrospective_to_eeprom(new_date, timestamp_current, &TER);
+	notes_to_mem[0] = timestamp[0];
+	notes_to_mem[1] = timestamp[1];
+	notes_to_mem[2] = TER.consumed_active_energy;
+	notes_to_mem[3] = TER.consumed_reactive_energy;
+	notes_to_mem[4] = TER.released_active_energy;
+	notes_to_mem[5] = TER.released_reactive_energy; 
 	
-	Pcon = 0;
-	Prel = 0;
-	Qcon = 0;
-	Qrel = 0;
-		
-	rtc_get_timestamp(timestamp_current);
-	rtc_set_day(days[0]);
-	uint8_t days_counter = 1;
-	for(uint8_t i = 0; i<127; i++)
+	while(current_address_of_day_retrosective != 0)
 	{
-		TER.consumed_active_energy = Pcon;
-		TER.consumed_reactive_energy = Prel;
-		TER.released_active_energy = Qcon;
-		TER.released_reactive_energy = Qrel;
-		
-		uint8_t new_date = rtc_date_update(timestamp_current);
-		if(new_date == 0)
-		{
-			printf("govno");
-			return 0x01;
-		}
-
-		mem_handler_send_retrospective_to_eeprom(new_date, timestamp_current, &TER);
-	HAL_RTC_GetTime(&hrtc, &time, RTC_FORMAT_BCD);
-	HAL_RTC_GetDate(&hrtc, &date, RTC_FORMAT_BCD);
-	printf("TIME: %x:%x:%x_%x.%x.%x\r\n", time.Hours, time.Minutes, time.Hours, date.Date, date.Month, date.Year);
-	printf("DATA[%u]: %u, %u, %u, %u\r\n", i, Pcon, Prel, Qcon, Qrel);
-		
-	    rtc_get_timestamp(timestamp_current);
-		rtc_set_day(days[days_counter++]);
-		if(days_counter == 32)
-			days_counter = 0;
-		
-		Pcon++;
-		Prel++;
-		Qcon++;
-		Qrel++;
+		mem_handler_send_retrospective_to_eeprom(1, timestamp, &TER);
 	}
+	mem_handler_send_retrospective_to_eeprom(1, timestamp, &TER);
 	
 	m24m01_get_from_mem(0x00, (uint8_t *) notes_from_mem, 24);
-	
 	for(uint8_t i = 0; i < 6; i++)
 	{
 		if(notes_from_mem[i] != notes_to_mem[i])
 		{
-			printf("zalupa - %u, %u, %u", i, notes_from_mem[i], notes_to_mem[i]);
 			return 0x02;
 		}
 	}

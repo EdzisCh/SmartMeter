@@ -75,27 +75,28 @@ int main(void)
 	
 	HAL_Delay(100);
 
-	//rtc_set_init_dateTime();
+	rtc_set_init_dateTime();
 
-	CS5490 chip_0;
-	chip_0.cs5490_huart = &huart1;
-	CS5490 chip_1;
-	chip_1.cs5490_huart = &huart2;
-	CS5490 chip_2;
-	chip_2.cs5490_huart = &huart3;
+	CS5490 chip_L1;
+	chip_L1.cs5490_huart = &huart1;
+	CS5490 chip_L2;
+	chip_L2.cs5490_huart = &huart2;
+	CS5490 chip_L3;
+	chip_L3.cs5490_huart = &huart3;
 	
-	if(cs5490_init(&chip_0, 0x01) == 0)
-	{
-		display_L1();
-	}
-	if(cs5490_init(&chip_1, 0x01) == 0)
-	{
-		display_L2();
-	}
-	if(cs5490_init(&chip_2, 0x01) == 0)
-	{
-		display_L3();
-	}
+//	if(!cs5490_init(&chip_L1))
+//	{
+//		display_L1();
+//	}
+//	if(!cs5490_init(&chip_L2))
+//	{
+//		display_L2();
+//	}
+//	if(!cs5490_init(&chip_L3))
+//	{
+//		display_L3();
+//	}
+	
 	
 	//Включение необходимых элементов дисплея
 	display_battery();
@@ -127,15 +128,13 @@ int main(void)
   while (1)
   {
 	  uint32_t time_start = uwTick;
-	  //калибровка
-	  //cs5490_full_callibration(&chip_1, calibrationData);
 	  
 	  //измерения
-	  Vrms = cs5490_get_Vrms(&chip_1);
-	  Irms = cs5490_get_Irms(&chip_1);
-	  freq = cs5490_get_freq(&chip_1);
+	  Vrms = cs5490_get_Vrms(&chip_L3);
+	  Irms = cs5490_get_Irms(&chip_L3);
+	  freq = cs5490_get_freq(&chip_L3);
 	  freq *= 4000;
-	  Pavg = cs5490_get_Pavg(&chip_1);
+	  Pavg = cs5490_get_Pavg(&chip_L3);
 	  
 	  //накопление
 	  mem_handler_set_data(&data, Pavg, 0, 0, 0, 0, Vrms, freq);

@@ -1,45 +1,56 @@
 #include "CS5490.h"
 
 /**
-! Инициализация измерителя и изначальная калибровка
+! Инициализация измерителя и изменение калибровочных регистров
 //TODO
 */
-uint8_t cs5490_init( CS5490 *chip, uint8_t conv_type )
+uint8_t cs5490_init( CS5490 *chip )
 {
-	uint8_t output = 0;
 	cs5490_reset(chip);
 	chip->cs5490_read_OK = READ_OPERATION_SUCCESS;
 	
-	cs5490_readReg(chip, 16, 1);
-	if(chip->cs5490_read_OK != READ_OPERATION_SUCCESS)
+	//Забираем из ПЗУ данные
+	uint32_t Igain;
+	uint32_t Vgain;
+	uint32_t Iac_off;
+	uint32_t Poff;
+	uint32_t PF;
+	uint32_t regcheck_from_ROM;
+	
+	m24m01_get_from_mem(MEM_ADDRESS_I_GAIN_L_1, (uint8_t *) &Igain, 4);
+	m24m01_get_from_mem(MEM_ADDRESS_V_GAIN_L_3, (uint8_t *) &Vgain, 4);
+	m24m01_get_from_mem(MEM_ADDRESS_I_AC_OFF_L_3, (uint8_t *) &Iac_off, 4);
+	m24m01_get_from_mem(MEM_ADDRESS_P_OFF_L_3, (uint8_t *) &Poff, 4);
+	m24m01_get_from_mem(MEM_ADDRESS_PF_L_3, (uint8_t *) &PF, 4);
+	m24m01_get_from_mem(MEM_ADDRESS_REGCHECK_L_3, (uint8_t *) &regcheck_from_ROM, 4);
+	
+	//вписываем их в измеритель
+	cs5490_write(chip, 16, 33, Igain);
+	cs5490_write(chip, 16, 35, Vgain);
+	cs5490_write(chip, 16, 37, Iac_off);
+	cs5490_write(chip, 16, 36, Poff);
+	cs5490_write(chip, 16, 21, PF);
+	
+	//проверка 
+	cs5490_single_conversation(chip);
+	
+	uint32_t regcheck = cs5490_get_RegChk(chip);
+	
+	if(regcheck != regcheck_from_ROM && chip->cs5490_read_OK != READ_OPERATION_SUCCESS)
 	{
 		return 0x01;
 	}
 	
-	//калибровка
+	cs5490_continious_conversation(chip);
 	
-	switch ( conv_type )
-	{
-		case 0x00:
-			cs5490_single_conversation(chip);
-			break;
-		case 0x01:
-			cs5490_continious_conversation(chip);
-			break;
-		case 0x02:
-			cs5490_halt_conversation(chip);
-			break;
-		default:
-			break;
-	}
-	
+	return 0;
 }
 
 
-	/**
-	! Запись значения value в регистр по адресу address на странице page
+/**
+! Запись значения value в регистр по адресу address на странице page
 
-	*/
+*/
 void cs5490_write( CS5490 *chip, int page, int address, uint32_t value )
 {
 	page |= PAGE_BYTE;
@@ -57,10 +68,10 @@ void cs5490_write( CS5490 *chip, int page, int address, uint32_t value )
 	
 }
 
-	/**
-	!Чтение 3-х байтов из регистра по адресу address на странице page
+/**
+!Чтение 3-х байтов из регистра по адресу address на странице page
 
-	*/
+*/
 void cs5490_read( CS5490 *chip, uint8_t page, uint8_t address )
 {
 	page |= PAGE_BYTE;
@@ -81,20 +92,20 @@ void cs5490_read( CS5490 *chip, uint8_t page, uint8_t address )
 	}
 }
 
-	/**
-    ! Выполнение определенной инструкции 
+/**
+! Выполнение определенной инструкции 
 
-	*/
+*/
 void cs5490_instruct( CS5490 *chip, int value )
 {
 	uint8_t buffer = (INSTRUCTION_BYTE | (uint8_t)value);
 	HAL_UART_Transmit(chip->cs5490_huart, &buffer, 1, 255);
 }
 
-	/**
-	!Соединени 3-х байтов, полоченных от измерителя
+/**
+!Соединени 3-х байтов, полоченных от измерителя
 
-	*/
+*/
 uint32_t cs5490_concatData( CS5490 *chip )
 {
 	uint32_t output = 0x00;
@@ -105,20 +116,20 @@ uint32_t cs5490_concatData( CS5490 *chip )
 	return output;
 }
 
-	/**
-	!Чтение регистра по адресу address на странице page
+/**
+!Чтение регистра по адресу address на странице page
 
-	*/
+*/
 uint32_t cs5490_readReg( CS5490 *chip, uint8_t page, uint8_t address )
 {
 	cs5490_read(chip, page, address);
 	return cs5490_concatData(chip);
 }
 
-	/**
-	!Функция калибровки. type - тип калибровки, channel - канал (V или I) 
+/**
+!Функция калибровки. type - тип калибровки, channel - канал (V или I) 
 
-	*/
+*/
 void cs5490_calibrate( CS5490 *chip, uint8_t type, uint8_t channel )
 {
 	HAL_Delay(2000);
@@ -128,86 +139,6 @@ void cs5490_calibrate( CS5490 *chip, uint8_t type, uint8_t channel )
 	cs5490_instruct(chip, calibration_byte);
 	
 	HAL_Delay(2000);
-}
-
-	/**
-	!Конвертация в удобочитаемый формат данных 
-
-	*/
-double cs5490_convert_to_double( CS5490 *chip, int LSB_pow, int MSB_option )
-{
-	double output = 0.0;
-	uint8_t MSB;
-
-	uint32_t buffer = cs5490_concatData(chip);
-
-	switch ( MSB_option )
-	{
-		case 0x00:
-			buffer &= 0x7FFFFF;
-			output = (double)buffer;
-			output /= pow(2, LSB_pow);
-			break;
-
-		case 0x01:
-		    MSB = chip->cs5490_data[2] & 0x80;
-			if ( MSB )
-			{ 
-				buffer = ~buffer;
-				buffer = buffer & 0x00FFFFFF; 
-				output = (double)buffer + 1.0;
-				output /= -pow(2,LSB_pow);
-			} else {  
-				output = (double)buffer;
-				output /= (pow(2,LSB_pow)-1.0);
-			}
-			break;
-		default:
-		case 0x02:
-			output = (double)buffer;
-			output /= pow(2,LSB_pow);
-			break;
-		
-	}
-
-	return output;
-}
-
-double cs5490_convert_to_double_2( uint32_t input, int LSB_pow, int MSB_option )
-{
-	double output = 0.0;
-	uint8_t MSB;
-
-	switch ( MSB_option )
-	{
-		case 0x00:
-			input &= 0x7FFFFF;
-			output = (double)input;
-			output /= pow(2, LSB_pow);
-			break;
-
-		case 0x01:
-		    MSB = ((input & 0x0000FF00) >> 8) & 0x80;
-			if ( MSB )
-			{ 
-				input = ~input;
-				input = input & 0x00FFFFFF; 
-				output = (double)input + 1.0;
-				output /= -pow(2,LSB_pow);
-			} else {  
-				output = (double)input;
-				output /= (pow(2,LSB_pow)-1.0);
-			}
-			break;
-		default:
-		case 0x02:
-			output = (double)input;
-			output /= pow(2,LSB_pow);
-			break;
-		
-	}
-
-	return output;
 }
 
 /**
@@ -286,6 +217,7 @@ void cs5490_halt_conversation( CS5490 *chip )
 }
 
 //===================================================================================
+
 /**
 !Функции для калибровок: Gain
 
@@ -294,13 +226,24 @@ void cs5490_halt_conversation( CS5490 *chip )
 double cs5490_get_gain_V( CS5490 *chip )
 {
 	cs5490_read(chip, 16, 35);
-	return cs5490_convert_to_double(chip, 22, 0x02);
+	//return cs5490_convert_to_double(chip, 22, 0x02);
+	uint32_t hex_value = cs5490_concatData(chip);
+	double factor = 1/(pow(2, 22) - 1);
+	factor *= (double) hex_value;
+	
+	return factor;
 }
 
 double cs5490_get_gain_I( CS5490 *chip )
 {
 	cs5490_read(chip, 16, 33);
-	return cs5490_convert_to_double(chip, 22, 0x02);
+	//return cs5490_convert_to_double(chip, 22, 0x02);
+	
+	uint32_t hex_value = cs5490_concatData(chip);
+	double factor = 1/(pow(2, 22) - 1);
+	factor *= (double) hex_value;
+	
+	return factor;
 }
 
 void cs5490_set_gain_V( CS5490 *chip, double value )
@@ -317,59 +260,6 @@ void cs5490_set_gain_I( CS5490 *chip, double value ){
 //===================================================================================
 
 /**
-!Функции для калибровок: AC offset, DC offset, Temperature
-
-*/
-float cs5490_get_DС_Offset_V( CS5490 *chip )
-{
-	cs5490_read(chip, 16, 34);
-	return cs5490_convert_to_double(chip, 23, 1);
-}
-
-void cs5490_set_DС_Offset_V( CS5490 *chip, float value)
-{
-	uint32_t val = cs5490_convert_to_binary( 23, 0x01, value);
-	cs5490_write(chip, 16, 34, val);
-}
-
-double cs5490_get_DC_Offset_I( CS5490 *chip )
-{
-	cs5490_read(chip, 16, 32);
-	return cs5490_convert_to_double(chip, 23, 1);
-}
-
-double cs5490_get_AC_Offset_I( CS5490 *chip )
-{
-	cs5490_read(chip, 16, 37);
-	return cs5490_convert_to_double(chip, 24, 0x02);
-}
-
-void cs5490_set_DC_Offset_I( CS5490 *chip, double value )
-{
-	uint32_t val = cs5490_convert_to_binary(23, 0x01, value);
-	cs5490_write(chip, 16, 32, val);
-}
-
-void cs5490_set_AC_Offset_I( CS5490 *chip, double value )
-{
-	uint32_t val = cs5490_convert_to_binary(24, 0x02, value);
-	cs5490_write(chip, 16, 37, val);
-}
-
-double cs5490_get_Offset_T( CS5490 *chip )
-{
-	cs5490_read(chip, 16, 55);
-	return cs5490_convert_to_double(chip, 16, 0x01);
-}
-
-void cs5490_set_Offset_T( CS5490 *chip, double value ){
-	uint32_t val = cs5490_convert_to_binary(16, 0x01, value);
-	cs5490_write(chip, 16, 55, val);
-}
-
-//===================================================================================
-
-/**
 !Функции получения измерений и преобразование в нормальный вид 
 
 */
@@ -377,21 +267,40 @@ double cs5490_get_I( CS5490 *chip )
 {
 	//Page 16, Address 2
 	cs5490_read(chip, 0x10, 0x02);
-	return cs5490_convert_to_double(chip, 23, 0x01);
+	
+	uint32_t hex_value = cs5490_concatData(chip);
+	double factor = 1/(pow(2, 24) - 1);
+	factor *= (double) hex_value;
+	
+	factor = (factor*CURRENT_FULLSCALE)/REGISTER_FULLSCALE;
+	
+	return factor;
 }
 
 double cs5490_get_V( CS5490 *chip )
 {
 	//Page 16, Address 3
 	cs5490_read(chip, 0x10, 0x03);
-	return cs5490_convert_to_double(chip, 23, 0x01);
+	uint32_t hex_value = cs5490_concatData(chip);
+	double factor = 1/(pow(2, 24) - 1);
+	factor *= (double) hex_value;
+	
+	factor = (factor*VOLTAGE_FULLSCALE)/REGISTER_FULLSCALE;
+	
+	return factor;
 }
 
-uint32_t cs5490_get_P( CS5490 *chip )
+double cs5490_get_P( CS5490 *chip )
 {
 	//Page 16, Address 4
 	cs5490_read(chip, 0x10, 0x04);
-	return cs5490_concatData(chip);
+	uint32_t hex_value = cs5490_concatData(chip);
+	double factor = 1/(pow(2, 24) - 1);
+	factor *= (double) hex_value;
+	
+	factor = (factor*VOLTAGE_FULLSCALE)/REGISTER_FULLSCALE;
+	
+	return factor;
 }
 
 double cs5490_get_Irms( CS5490 *chip ){
@@ -400,7 +309,11 @@ double cs5490_get_Irms( CS5490 *chip ){
 	
 	uint32_t hex_value = cs5490_concatData(chip);
 	double factor = 1/(pow(2, 24) - 1);
-	return factor * (double) hex_value;
+	factor *= (double) hex_value;
+	
+	factor = (factor*CURRENT_FULLSCALE)/REGISTER_FULLSCALE;
+	
+	return factor;
 }
 
 double cs5490_get_Vrms( CS5490 *chip ){
@@ -409,14 +322,23 @@ double cs5490_get_Vrms( CS5490 *chip ){
 	
 	uint32_t hex_value = cs5490_concatData(chip);
 	double factor = 1/(pow(2, 24) - 1);
-	return factor * (double) hex_value;
+	factor *= (double) hex_value;
+	
+	factor = (factor*VOLTAGE_FULLSCALE)/REGISTER_FULLSCALE;
+	
+	return factor;
 }
 
 double cs5490_get_PF( CS5490 *chip )
 {
 	//Page 16, Address 21
 	cs5490_read(chip, 16, 21);
-	return cs5490_convert_to_double(chip, 23, 0x01);
+	//Знак определяется Pavg
+	uint32_t hex_value = cs5490_concatData(chip);
+	double factor = 1/(pow(2, 23) - 1);
+	factor *= (double) hex_value;
+	
+	return factor;
 }
 
 double cs5490_get_Pavg( CS5490 *chip )
@@ -431,21 +353,50 @@ double cs5490_get_Pavg( CS5490 *chip )
 	}
 	uint32_t hex_value = cs5490_concatData(chip);
 	double factor = 1/(pow(2, 23) - 1) * (-1) * MSB;
-	return factor * (double) hex_value;
+	
+	factor *= (double) hex_value;
+	
+	factor = factor * POWER_FULLSCALE;
+	
+	return factor;
 }
 
 double cs5490_get_Qavg( CS5490 *chip )
 {
 	//Page 16, Address 14
 	cs5490_read(chip, 0x10, 0x0E);
-	return cs5490_convert_to_double(chip, 23, 0x01);
+	int8_t MSB = (chip->cs5490_data[0] & 0x80) >> 7;
+	if(MSB == 0x00)
+	{
+		MSB = -1;
+	}
+	uint32_t hex_value = cs5490_concatData(chip);
+	double factor = 1/(pow(2, 23) - 1) * (-1) * MSB;
+	
+	factor *= (double) hex_value;
+	
+	factor = factor * POWER_FULLSCALE;
+	
+	return factor;
 }
 
 double cs5490_get_Savg( CS5490 *chip )
 {
 	//Page 16, Address 20
 	cs5490_read(chip, 0x10, 0x14);
-	return cs5490_convert_to_double(chip, 23, 0x01);
+	int8_t MSB = (chip->cs5490_data[0] & 0x80) >> 7;
+	if(MSB == 0x00)
+	{
+		MSB = -1;
+	}
+	uint32_t hex_value = cs5490_concatData(chip);
+	double factor = 1/(pow(2, 23) - 1) * (-1) * MSB;
+	
+	factor *= (double) hex_value;
+	
+	factor = factor * POWER_FULLSCALE;
+	
+	return factor;
 }
 
 uint32_t cs5490_get_total_P( CS5490 *chip )
@@ -473,21 +424,21 @@ double cs5490_get_freq( CS5490 *chip )
 {
 	//Page 16, Address 49
 	cs5490_read(chip, 0x10, 0x31);
-	return cs5490_convert_to_double(chip, 23, 0x02);
+	//return cs5490_convert_to_double(chip, 23, 0x02);
+	uint32_t hex_value = cs5490_concatData(chip);
+	
+	double factor = 1/(pow(2, 23)-1);
+	factor *= (double) hex_value;
+	
+	return factor;
 }
 
-double cs5490_get_time( CS5490 *chip )
+uint32_t cs5490_get_time( CS5490 *chip )
 {
 	//Page 16, Address 61
 	cs5490_read(chip, 0x10, 0x3D);
-	return cs5490_convert_to_double(chip, 0, 0x02);
-}
-
-double cs5490_get_T( CS5490 *chip )
-{
-	//Page 16, Address 27
-	cs5490_read(chip, 0x10, 0x1B);
-	return cs5490_convert_to_double(chip, 16, 0x01);
+	uint32_t value = cs5490_concatData(chip);
+	return cs5490_concatData(chip);
 }
 
 uint32_t cs5490_get_RegChk( CS5490 *chip )
@@ -549,18 +500,18 @@ uint8_t cs5490_full_callibration( CS5490 *chip )
 		printf("error reading data at 8 phase\r\n");
 		return 0x09;
 	}
-	printf("Vrms: %f V\r\n", rmsV);
 	
-	rmsV = (rmsV*VOLTAGE_FULLSCALE)/REGISTER_FULLSCALE;
+	//rmsV = (rmsV*VOLTAGE_FULLSCALE)/REGISTER_FULLSCALE;
 	
 	printf("Vrms: %f V\r\n", rmsV);
 	printf("Freq: %f Hz\r\n", freq*SAMPLE_COUNT_DEFAULT);
 	
-	rmsI = (rmsI*CURRENT_FULLSCALE)/REGISTER_FULLSCALE;
+	//rmsI = (rmsI*CURRENT_FULLSCALE)/REGISTER_FULLSCALE;
 	
 	printf("Irms: %f A\r\n", rmsI);
 	printf("PF %f\r\n", PF);
-	printf("P: %f W\r\n", P * POWER_FULLSCALE);	
+	//printf("P: %f W\r\n", P * POWER_FULLSCALE);	
+	printf("P: %f W\r\n", P);	
 	
 	//9 stop conv
 	cs5490_halt_conversation(chip);
@@ -629,16 +580,17 @@ uint8_t cs5490_full_callibration( CS5490 *chip )
 		return 0x10;
 	}
 	
-	rmsV = (rmsV*VOLTAGE_FULLSCALE)/REGISTER_FULLSCALE;
+	//rmsV = (rmsV*VOLTAGE_FULLSCALE)/REGISTER_FULLSCALE;
 	
 	printf("Vrms: %f V\r\n", rmsV);
 	printf("Freq: %f Hz\r\n", freq*SAMPLE_COUNT_DEFAULT);
 	
-	rmsI = (rmsI*CURRENT_FULLSCALE)/REGISTER_FULLSCALE;
+	//rmsI = (rmsI*CURRENT_FULLSCALE)/REGISTER_FULLSCALE;
 	
 	printf("Irms: %f A\r\n", rmsI);
 	printf("PF %f\r\n", PF);
-	printf("P: %f W\r\n", P * POWER_FULLSCALE);
+	//printf("P: %f W\r\n", P * POWER_FULLSCALE);
+	printf("P: %f W\r\n", P);	
 	
 	uint32_t Igain = cs5490_readReg(chip, 16, 33);
 	uint32_t Vgain = cs5490_readReg(chip, 16, 35);
@@ -661,12 +613,12 @@ uint8_t cs5490_full_callibration( CS5490 *chip )
 	printf("Regcheck %x\r\n", regcheck_2);
 	
 	//сохраняем данные в EEPROM в самый конец
-	m24m01_save_to_mem(MAX_MEM_ADDRESS - 52, (uint8_t *) &Igain, 4);
-	m24m01_save_to_mem(MAX_MEM_ADDRESS - 48, (uint8_t *) &Vgain, 4);
-	m24m01_save_to_mem(MAX_MEM_ADDRESS - 44, (uint8_t *) &Iac_off, 4);
-	m24m01_save_to_mem(MAX_MEM_ADDRESS - 40, (uint8_t *) &Poff, 4);
-	m24m01_save_to_mem(MAX_MEM_ADDRESS - 36, (uint8_t *) &PF_2, 4);
-	m24m01_save_to_mem(MAX_MEM_ADDRESS - 32, (uint8_t *) &regcheck_2, 4);
+	m24m01_save_to_mem(MEM_ADDRESS_I_GAIN_L_1, (uint8_t *) &Igain, 4);
+	m24m01_save_to_mem(MEM_ADDRESS_V_GAIN_L_3, (uint8_t *) &Vgain, 4);
+	m24m01_save_to_mem(MEM_ADDRESS_I_AC_OFF_L_3, (uint8_t *) &Iac_off, 4);
+	m24m01_save_to_mem(MEM_ADDRESS_P_OFF_L_3, (uint8_t *) &Poff, 4);
+	m24m01_save_to_mem(MEM_ADDRESS_PF_L_3, (uint8_t *) &PF_2, 4);
+	m24m01_save_to_mem(MEM_ADDRESS_REGCHECK_L_3, (uint8_t *) &regcheck_2, 4);
 
 	return 0x00;
 }

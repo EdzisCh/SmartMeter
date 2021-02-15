@@ -30,7 +30,7 @@ uint8_t tests_run( void );
 uint8_t test_rtc_init( void );
 uint8_t test_rtc_get_timestamp( void );
 uint8_t test_rtc_date_update( void );
-uint8_t test_rtc_set_hours( void );
+uint8_t test_rtc_set_time_and_date( void );
 uint8_t test_rtc_set_day( void );
 
 //===================================================================================

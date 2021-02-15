@@ -27,7 +27,7 @@ uint8_t rtc_set_seconds( uint8_t seconds );
 uint8_t rtc_set_day( uint8_t day );
 uint8_t rtc_set_month( uint8_t month );
 uint8_t rtc_set_year( uint8_t year );
-uint8_t rtc_set_date_and_time( uint64_t dateTime );
+uint8_t rtc_set_date_and_time( uint32_t *dateTime );
 uint8_t rtc_set_date( uint32_t date );
 uint8_t rtc_set_time( uint32_t time );
 
@@ -37,6 +37,7 @@ uint8_t rtc_get_seconds( void );
 uint8_t rtc_get_day( void );
 uint8_t rtc_get_month( void );
 uint8_t rtc_get_year( void );
+uint8_t rtc_get_date_and_time( uint32_t *dateTime );
 uint32_t rtc_get_date( void );
 uint32_t rtc_get_time( void );
 #endif

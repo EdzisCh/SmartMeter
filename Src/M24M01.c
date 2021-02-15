@@ -1,8 +1,8 @@
 #include "M24M01.h"
 
-uint32_t current_address_of_day_retrosective = 0x00;
+uint32_t current_address_of_day_retrosective = 0x0000;
 uint32_t current_address_of_month_retrosective = 0x0C00; //3072
-uint32_t current_address_of_year_retrosective = 0xFC0;
+uint32_t current_address_of_year_retrosective = 0x0FC0;
 
 /**
 !Запись данных в EEPROM

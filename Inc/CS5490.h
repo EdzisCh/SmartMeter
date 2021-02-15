@@ -1,6 +1,5 @@
 /**
 !	
-
 */
 #ifndef CS5490_H
 #define CS5490_H
@@ -30,25 +29,46 @@
 #define READ_OPERATION_FAILURE 0
 #define READ_OPERATION_SUCCESS 1
 
-
-
+#define SHUNT_OHM 0.0025
+#define VOLTAGE_DEVIDER_V 1000
 #define REGISTER_FULLSCALE 0.6
-#define VOLTAGE_FULLSCALE 240  
-//#define V_MAX_RMS_V (V_FS_RMS_V/VOLTAGE_DEVIDER_V)
-#define CURRENT_FULLSCALE 100  
-//#define I_MAX_RMS_A   (I_FS_RMS_V/R_SHUNT_OHM)
+#define VOLTAGE_FULLSCALE_MAX 240  
+#define VOLTAGE_FULLSCALE (VOLTAGE_FULLSCALE_MAX/VOLTAGE_DEVIDER_V)
+#define CURRENT_FULLSCALE_MAX 100  
+#define CURRENT_FULLSCALE (CURRENT_FULLSCALE_MAX/SHUNT_OHM)
 #define POWER_REGISTER_FULLSCALE 0.36
 #define POWER_FULLSCALE ((VOLTAGE_FULLSCALE * CURRENT_FULLSCALE) / (POWER_REGISTER_FULLSCALE))
 #define SAMPLE_COUNT_DEFAULT  4000
 
-#define CURRENT_CALIBRATION_REF  0.183 
+#define CURRENT_CALIBRATION_REF  0.35
 #define SCALE_REGISTER_FRACTION  (0.6 * (CURRENT_CALIBRATION_REF / CURRENT_FULLSCALE)) 
 #define SCALE_REGISTER_VALUE ((uint32_t)(SCALE_REGISTER_FRACTION * 0x800000)) //pow(2, 23) = 0x800000
 
-	/**
-	! Структура измерителя
-	
-	*/
+#define MEM_ADDRESS_I_GAIN_L_1 124947
+#define MEM_ADDRESS_V_GAIN_L_1 124951
+#define MEM_ADDRESS_I_AC_OFF_L_1 124955
+#define MEM_ADDRESS_P_OFF_L_1 124959
+#define MEM_ADDRESS_PF_L_1 124963
+#define MEM_ADDRESS_REGCHECK_L_1 124967
+
+#define MEM_ADDRESS_I_GAIN_L_2 124923
+#define MEM_ADDRESS_V_GAIN_L_2 124927
+#define MEM_ADDRESS_I_AC_OFF_L_2 124931
+#define MEM_ADDRESS_P_OFF_L_2 124935
+#define MEM_ADDRESS_PF_L_2 124939
+#define MEM_ADDRESS_REGCHECK_L_2 124943
+
+#define MEM_ADDRESS_I_GAIN_L_3 124899
+#define MEM_ADDRESS_V_GAIN_L_3 124903
+#define MEM_ADDRESS_I_AC_OFF_L_3 124907
+#define MEM_ADDRESS_P_OFF_L_3 124911
+#define MEM_ADDRESS_PF_L_3 124915
+#define MEM_ADDRESS_REGCHECK_L_3 124919
+
+/**
+! Структура измерителя
+
+*/
 typedef struct CS5490
 {
 	UART_HandleTypeDef *cs5490_huart;
@@ -57,18 +77,14 @@ typedef struct CS5490
 	float cs5490_MCLK;
 } CS5490;
 
-uint8_t cs5490_init( CS5490 *chip, uint8_t conv_type );
+uint8_t cs5490_init( CS5490 *chip );
 void cs5490_write( CS5490 *chip, int page, int address, uint32_t value );
 void cs5490_read( CS5490 *chip, uint8_t page, uint8_t address );
 void cs5490_instruct( CS5490 *chip, int instruction );
 uint32_t cs5490_concatData( CS5490 *chip );
 uint32_t cs5490_readReg( CS5490 *chip, uint8_t page, uint8_t address );
 void cs5490_calibrate( CS5490 *chip, uint8_t type, uint8_t channel );
-
 uint8_t cs5490_full_callibration( CS5490 *chip );
-
-double cs5490_convert_to_double( CS5490 *chip, int LSB_pow, int MSB_option );
-double cs5490_convert_to_double_2( uint32_t input, int LSB_pow, int MSB_option );///!!!
 uint32_t cs5490_convert_to_binary(int LSB_pow, int MSB_option, double input);
 
 //===================================================================================
@@ -100,7 +116,7 @@ void cs5490_set_Offset_T( CS5490 *chip, double value );
 
 double cs5490_get_I( CS5490 *chip );
 double cs5490_get_V( CS5490 *chip );
-uint32_t cs5490_get_P( CS5490 *chip );
+double cs5490_get_P( CS5490 *chip );
 
 double cs5490_get_Irms( CS5490 *chip );
 double cs5490_get_Vrms( CS5490 *chip );
@@ -116,9 +132,7 @@ uint32_t cs5490_get_total_Q( CS5490 *chip );
 
 double cs5490_get_freq( CS5490 *chip );
 
-double cs5490_get_time( CS5490 *chip );
-
-double cs5490_get_T( CS5490 *chip );
+uint32_t cs5490_get_time( CS5490 *chip );
 
 uint32_t cs5490_get_RegChk( CS5490 *chip );
 #endif
