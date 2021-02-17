@@ -1,10 +1,5 @@
-/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __MAIN_H__
 #define __MAIN_H__
-
-/* Includes ------------------------------------------------------------------*/
-
-/* Private define ------------------------------------------------------------*/
 
 #define KEY_3_Pin GPIO_PIN_5
 #define KEY_3_GPIO_Port GPIOE
@@ -81,4 +76,4 @@ void _Error_Handler(char *, int);
 }
 #endif
 
-#endif /* __MAIN_H__ */
+#endif

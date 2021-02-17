@@ -1,6 +1,7 @@
 #include "main.h"
 #include "stm32l4xx_hal.h"
 
+/* USER CODE BEGIN Includes */
 #include "lcd.h"
 #include "RTC.h"
 #include "CS5490.h"
@@ -11,9 +12,8 @@
 #include "M24M01.h"
 #include "S25FL.h"
 #include "Tests.h"
-
-extern __IO uint32_t uwTick;
-uint8_t cycle;
+#include "string.h"
+/* USER CODE END Includes */
 
 I2C_HandleTypeDef hi2c2;
 I2C_HandleTypeDef hi2c3;
@@ -29,6 +29,11 @@ UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 
+/* USER CODE BEGIN PV */
+extern __IO uint32_t uwTick;
+uint8_t cycle;
+/* USER CODE END PV */
+
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C2_Init(void);
@@ -42,14 +47,12 @@ static void MX_USART2_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
- 
-
+  
 int main(void)
 {
 	HAL_Init();
-
 	SystemClock_Config();
-
+	
 	MX_GPIO_Init();
 	MX_I2C2_Init();
 	MX_UART5_Init();
@@ -60,7 +63,9 @@ int main(void)
 	MX_TIM5_Init();
 	MX_USART2_UART_Init();
 	MX_USART3_UART_Init();
-  
+	
+  /* USER CODE BEGIN 2 */
+
 	printf("--START--\r\n");
 	HAL_GPIO_WritePin(LED_BL_GPIO_Port, LED_BL_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(LED_ACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_RESET);
@@ -73,8 +78,6 @@ int main(void)
 
 	display_clear();
 	
-	HAL_Delay(100);
-
 	rtc_set_init_dateTime();
 
 	CS5490 chip_L1;
@@ -92,11 +95,10 @@ int main(void)
 //	{
 //		display_L2();
 //	}
-//	if(!cs5490_init(&chip_L3))
+//	if(cs5490_init(&chip_L3) == 0)
 //	{
 //		display_L3();
 //	}
-	
 	
 	//Включение необходимых элементов дисплея
 	display_battery();
@@ -110,7 +112,6 @@ int main(void)
 	
 	data data;
 	total_energy_register TER;
-	uint8_t rs485_message[4];
 	
 	uint32_t timestamp[2];
 	rtc_get_timestamp(timestamp);
@@ -124,7 +125,9 @@ int main(void)
 	}
 	
 	display_clear_units();
-	
+  /* USER CODE END 2 */
+
+  /* USER CODE BEGIN WHILE */
   while (1)
   {
 	  uint32_t time_start = uwTick;
@@ -180,44 +183,16 @@ int main(void)
 		//блок формирования ретроспективы аналогично регистрам общего накопления
 	  
 	  //---rs485
-	  if(rs485_is_received())
-	  {
-		  rs485_get_message(rs485_message, 4);
-		  
-		  printf("mess: ");
-		  for(uint8_t i = 0; i < 4; i++)
-		  {
-			  printf("%d ", rs485_message[i]);
-		  }
-		  printf("\r\n");
-		  
-		  switch(rs485_message[0])
-		  {
-			  case 1:
-				  printf("1 answer\r\n");
-			      break;
-			
-			  case 2:
-				  printf("2 answer\r\n");
-				  break;
-			  
-			  default:
-				  break;
-		  }
-		  rs485_message[0] = 0;
-			  
-	  }
+	  
 	  
 	  uint32_t time_stop = uwTick;
 	  //printf("\r\nSrart:%d Stop:%d Diff:%d\r\n", time_start, time_stop, time_stop - time_start);
+  /* USER CODE END WHILE */
+
   }
 
 }
 
-/**
-! System Clock Configuration
-
-*/
 void SystemClock_Config(void)
 {
 
@@ -371,11 +346,11 @@ static void MX_QUADSPI_Init(void)
 
   /* QUADSPI parameter configuration*/
   hqspi.Instance = QUADSPI;
-  hqspi.Init.ClockPrescaler = 254;
-  hqspi.Init.FifoThreshold = 8;
+  hqspi.Init.ClockPrescaler = 255;
+  hqspi.Init.FifoThreshold = 1;
   hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE;
-  hqspi.Init.FlashSize = 31;
-  hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_8_CYCLE;
+  hqspi.Init.FlashSize = 1;
+  hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE;
   hqspi.Init.ClockMode = QSPI_CLOCK_MODE_0;
   if (HAL_QSPI_Init(&hqspi) != HAL_OK)
   {
@@ -387,10 +362,10 @@ static void MX_QUADSPI_Init(void)
 /* RTC init function */
 static void MX_RTC_Init(void)
 {
-
+	
   RTC_TimeTypeDef sTime;
   RTC_DateTypeDef sDate;
-
+	
 
     /**Initialize RTC Only 
     */
@@ -507,7 +482,7 @@ static void MX_USART1_UART_Init(void)
 {
 
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 2400;
+  huart1.Init.BaudRate = 115200;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -528,7 +503,7 @@ static void MX_USART2_UART_Init(void)
 {
 
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 2400;
+  huart2.Init.BaudRate = 115200;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
@@ -549,7 +524,7 @@ static void MX_USART3_UART_Init(void)
 {
 
   huart3.Instance = USART3;
-  huart3.Init.BaudRate = 2400;
+  huart3.Init.BaudRate = 115200;
   huart3.Init.WordLength = UART_WORDLENGTH_8B;
   huart3.Init.StopBits = UART_STOPBITS_1;
   huart3.Init.Parity = UART_PARITY_NONE;
@@ -565,13 +540,6 @@ static void MX_USART3_UART_Init(void)
 
 }
 
-/** Configure pins as 
-        * Analog 
-        * Input 
-        * Output
-        * EVENT_OUT
-        * EXTI
-*/
 static void MX_GPIO_Init(void)
 {
 
@@ -627,17 +595,22 @@ static void MX_GPIO_Init(void)
 
 }
 
-
 void _Error_Handler(char *file, int line)
 {
   /* User can add his own implementation to report the HAL error return state */
   while(1)
   {
   }
+  
 }
 
 #ifdef  USE_FULL_ASSERT
 
 void assert_failed(uint8_t* file, uint32_t line)
-
-#endif /* USE_FULL_ASSERT */
+{ 
+  /* USER CODE BEGIN 6 */
+  /* User can add his own implementation to report the file name and line number,
+     tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* USER CODE END 6 */
+}
+#endif 

@@ -17,7 +17,7 @@ uint8_t cs5490_init( CS5490 *chip )
 	uint32_t PF;
 	uint32_t regcheck_from_ROM;
 	
-	m24m01_get_from_mem(MEM_ADDRESS_I_GAIN_L_1, (uint8_t *) &Igain, 4);
+	m24m01_get_from_mem(MEM_ADDRESS_I_GAIN_L_3, (uint8_t *) &Igain, 4);
 	m24m01_get_from_mem(MEM_ADDRESS_V_GAIN_L_3, (uint8_t *) &Vgain, 4);
 	m24m01_get_from_mem(MEM_ADDRESS_I_AC_OFF_L_3, (uint8_t *) &Iac_off, 4);
 	m24m01_get_from_mem(MEM_ADDRESS_P_OFF_L_3, (uint8_t *) &Poff, 4);

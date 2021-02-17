@@ -458,16 +458,6 @@
               <FilePath>..\Src\mem_handler.c</FilePath>
             </File>
             <File>
-              <FileName>RS485.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Src\RS485.c</FilePath>
-            </File>
-            <File>
-              <FileName>RS485.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\Inc\RS485.h</FilePath>
-            </File>
-            <File>
               <FileName>Retarget.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\Retarget.c</FilePath>
@@ -501,6 +491,16 @@
               <FileName>tests.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\tests.c</FilePath>
+            </File>
+            <File>
+              <FileName>RS485.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\RS485.c</FilePath>
+            </File>
+            <File>
+              <FileName>RS485.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Inc\RS485.h</FilePath>
             </File>
           </Files>
         </Group>
