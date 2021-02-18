@@ -75,7 +75,6 @@ void PendSV_Handler(void)
 
 void SysTick_Handler(void)
 {
-	
 	GPIO_PinState key_1, key_2, key_3;
 
 	key_1 = HAL_GPIO_ReadPin(KEY_1_GPIO_Port, KEY_1_Pin);
@@ -109,29 +108,3 @@ void TIM5_IRQHandler(void)
   HAL_TIM_IRQHandler(&htim5);
 	
 }
-
-
-void UART5_IRQHandler(void)
-{
-	
-	uint8_t message[10];
-	rs485_get_message(message);
-	
-	if(rs485_is_received())
-	{
-		
-		if(strcmp((const char *)message, "led_on_act") == 0)
-		{
-			HAL_GPIO_WritePin(LED_REACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_SET);
-		}
-		if(strcmp((const char *)message, "led_of_act") == 0)
-		{
-			HAL_GPIO_WritePin(LED_REACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_RESET);
-		}
-		
-	}
-	
-	HAL_UART_IRQHandler(&huart5);
-	
-}
-

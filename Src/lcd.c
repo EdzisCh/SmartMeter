@@ -564,13 +564,24 @@ void display_level( uint8_t level )
 	}
 }
 
-void display_WIFI( void )
+void display_WIFI_on( void )
 {
 	uint8_t value = 128;
 		
 	uint8_t current_value = display_byte_read( 6 );
 	
 	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 6, 1, &value, 1, 255);
+}
+
+void display_WIFI_off( void )
+{
+	uint8_t value = 0x7F;
+		
+	uint8_t current_value = display_byte_read( 6 );
+	
+	value &= current_value;
 	
 	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 6, 1, &value, 1, 255);
 }
