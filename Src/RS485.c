@@ -1,8 +1,11 @@
 #include "RS485.h"
 
+ring_buf ring;
+uint8_t buffer[RX_BUFF_SIZE];
+uint16_t size = 80;
 uint8_t rxBuffer[RX_BUFF_SIZE];
 uint8_t rx_buf[10];
-uint8_t i = 0;
+uint8_t count = 0;
 
 int rxindex = 0; // index for going though rxString
 
@@ -49,39 +52,28 @@ uint8_t rs485_send_message( uint8_t *message, uint8_t size )
 void rs485_start( void )
 {
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
-	i = 0;
-
-	HAL_UART_Receive_IT(&huart5, rxBuffer, RX_BUFF_SIZE);
+	count = 0;
+	ring_buff_init(&ring, buffer, size);
+	
+	__HAL_UART_ENABLE_IT(&huart5, UART_IT_RXNE);
+	//HAL_UART_Receive_IT(&huart5, rxBuffer, RX_BUFF_SIZE);
 }
 
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle)
-{
-	uint8_t this_data = UartHandle->Instance->TDR;
-	
-	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_SET);
-	HAL_UART_Transmit(UartHandle, &this_data, 1, 100);
-	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
-	
-}
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
 {
 	display_WIFI_on();
 	
-	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_SET);
-	HAL_UART_Transmit(UartHandle, rx_buf, sizeof(rx_buf), 100);
-	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
-	
-	HAL_UART_Receive_IT(UartHandle, rxBuffer, RX_BUFF_SIZE);
+	//HAL_UART_Receive_IT(UartHandle, rxBuffer, RX_BUFF_SIZE);
 	
 	display_WIFI_off();
 }
 
 void UART5_IRQHandler(void)
 {
-	HAL_UART_IRQHandler(&huart5);
-	
 	UART_byte_proceed(&huart5);
+	return;
+	HAL_UART_IRQHandler(&huart5);
 	
 }
 
@@ -89,20 +81,19 @@ void UART_byte_proceed(UART_HandleTypeDef* huart)
 {
 	if(huart->Instance == UART5)
 	{
-		huart->pRxBuffPtr--;
-		uint8_t c = (uint8_t) *huart->pRxBuffPtr;
-		rx_buf[i] = c;
-		i++;		
-		huart->pRxBuffPtr++;
-		if(i == 10)
+		if((huart->Instance->ISR & USART_ISR_RXNE) != RESET)
 		{
-			execute_command(rx_buf);
-			i = 0;
-			for(uint8_t k = 0; k < 10; k++)
-			{
-				rx_buf[k] = 0;
-			}
-		} 
+			uint8_t c = (uint8_t) (huart->Instance->RDR & (uint8_t)0x00FF);
+			
+			ring_buff_put(c, &ring);
+			count++;
 		
+			if(c == '\n')
+			{
+				execute_command(&ring, count);
+				count = 0;
+			} 
+		}
 	}
+	return;
 }

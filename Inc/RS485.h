@@ -9,9 +9,10 @@
 #include "stdio.h"
 #include "lcd.h"
 #include "commands_hendler.h"
+#include "ring_buffer.h"
 
 
-#define RX_BUFF_SIZE 11
+#define RX_BUFF_SIZE 80
 
 extern UART_HandleTypeDef huart5;
 
