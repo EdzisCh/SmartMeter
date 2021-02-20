@@ -22,6 +22,7 @@ int rs485_send_byte( uint8_t byte )
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
 
 	display_WIFI_off();
+	
 	return output;
 }
 
@@ -41,8 +42,7 @@ uint8_t rs485_send_message( uint8_t *message, uint8_t size )
 }
 
 /**
-! Получение нескольких байт размеров size по  RS485. После передачи пин RX/TX_485 
-  устанавливается в 0
+! Инициализация кольцевого буфера, включение прерываний по приему
 */
 void rs485_start( void )
 {
@@ -53,16 +53,22 @@ void rs485_start( void )
 	__HAL_UART_ENABLE_IT(&huart5, UART_IT_RXNE);
 }
 
-
+/**
+! Обработчик прерываний
+*/
 void UART5_IRQHandler(void)
 {
-	UART_byte_proceed(&huart5);
+	rs485_rx_byte_handler(&huart5);
 	return;
 	HAL_UART_IRQHandler(&huart5);
 	
 }
 
-void UART_byte_proceed(UART_HandleTypeDef* huart)
+/**
+! Помещение входящего байта в кольцевой буффер и вызов комманды,
+если входящий байт == '\n'
+*/
+void rs485_rx_byte_handler(UART_HandleTypeDef* huart)
 {
 	if(huart->Instance == UART5)
 	{
