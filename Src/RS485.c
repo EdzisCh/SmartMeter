@@ -3,12 +3,7 @@
 ring_buf ring;
 uint8_t buffer[RX_BUFF_SIZE];
 uint16_t size = 80;
-uint8_t rxBuffer[RX_BUFF_SIZE];
-uint8_t rx_buf[10];
 uint8_t count = 0;
-
-int rxindex = 0; // index for going though rxString
-
 
 /**
 ! Отправка одного байта по  RS485. После передачи пин RX/TX_485 
@@ -56,18 +51,8 @@ void rs485_start( void )
 	ring_buff_init(&ring, buffer, size);
 	
 	__HAL_UART_ENABLE_IT(&huart5, UART_IT_RXNE);
-	//HAL_UART_Receive_IT(&huart5, rxBuffer, RX_BUFF_SIZE);
 }
 
-
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
-{
-	display_WIFI_on();
-	
-	//HAL_UART_Receive_IT(UartHandle, rxBuffer, RX_BUFF_SIZE);
-	
-	display_WIFI_off();
-}
 
 void UART5_IRQHandler(void)
 {
@@ -87,12 +72,13 @@ void UART_byte_proceed(UART_HandleTypeDef* huart)
 			
 			ring_buff_put(c, &ring);
 			count++;
-		
+			
 			if(c == '\n')
 			{
 				execute_command(&ring, count);
+				ring_buff_clear(&ring);
 				count = 0;
-			} 
+			}
 		}
 	}
 	return;
