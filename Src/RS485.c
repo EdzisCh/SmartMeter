@@ -81,7 +81,7 @@ void rs485_rx_byte_handler(UART_HandleTypeDef* huart)
 			
 			if(c == '\n')
 			{
-				execute_command(&ring, count);
+				cmd_handler_execute_command(&ring, count);
 				ring_buff_clear(&ring);
 				count = 0;
 			}
