@@ -503,16 +503,6 @@
               <FilePath>..\Inc\RS485.h</FilePath>
             </File>
             <File>
-              <FileName>commands_hendler.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\Inc\commands_hendler.h</FilePath>
-            </File>
-            <File>
-              <FileName>commands_hendler.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Src\commands_hendler.c</FilePath>
-            </File>
-            <File>
               <FileName>ring_buffer.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\ring_buffer.c</FilePath>
@@ -521,6 +511,16 @@
               <FileName>ring_buffer.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\Inc\ring_buffer.h</FilePath>
+            </File>
+            <File>
+              <FileName>commands_handler.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Inc\commands_handler.h</FilePath>
+            </File>
+            <File>
+              <FileName>commands_handler.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\commands_handler.c</FilePath>
             </File>
           </Files>
         </Group>

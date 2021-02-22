@@ -42,13 +42,14 @@ uint8_t rs485_send_message( uint8_t *message, uint8_t size )
 }
 
 /**
-! Инициализация кольцевого буфера, включение прерываний по приему
+! Инициализация кольцевого буфера, команд, включение прерываний по приему
 */
 void rs485_start( void )
 {
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
 	count = 0;
 	ring_buff_init(&ring, buffer, size);
+	cmd_handler_commands_init();
 	
 	__HAL_UART_ENABLE_IT(&huart5, UART_IT_RXNE);
 }

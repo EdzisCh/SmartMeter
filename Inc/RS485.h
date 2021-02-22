@@ -7,7 +7,7 @@
 #include "stm32l4xx_hal.h"
 #include "stdio.h"
 #include "lcd.h"
-#include "commands_hendler.h"
+#include "commands_handler.h"
 #include "ring_buffer.h"
 
 #define RX_BUFF_SIZE 80
