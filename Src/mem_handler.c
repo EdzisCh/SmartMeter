@@ -1,9 +1,9 @@
 #include "mem_handler.h" 
 #include "stdio.h"
 
-	/**
-	!Сохранение данных из змериеля в промежуточные накопители
-	*/
+/**
+!Сохранение данных из змериеля в промежуточные накопители
+*/
 void mem_handler_set_data( data *data, uint32_t P, 
 						   uint32_t Q, uint32_t S, 
                            uint32_t cosPhi, uint32_t I, 
@@ -26,10 +26,6 @@ void mem_handler_set_total_energy_register( total_energy_register *regs, data *d
 	regs->released_reactive_energy = 0x00;
 }
 
-void mem_handler_set_tarrif_accumulator( void )
-{
-}
-
 void mem_handler_get_data( void )
 {
 }
@@ -38,13 +34,9 @@ void mem_handler_get_total_energy_register( void )
 {
 }
  
-void mem_handler_get_tarrif_accumulator( void )
-{
-}
-
 /**
 !Формирование ретроспективы для каждого изменения даты (день, месяц, год) и отправка в память. 
-
+date - отвечает за вид ретроспективы: 1 - дневная, 2 - месячная, 3 - годовая
 */
 void mem_handler_send_retrospective_to_eeprom( uint8_t date, uint32_t *timestamp, total_energy_register *regs )
 {
