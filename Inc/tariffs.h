@@ -29,15 +29,26 @@ typedef struct tariffs_accum
 /*
 !Ячейка расписания (время - тариф)
 start_time - время начала действия тарифа (включительно)
-end_time - время окончания действия тарифа (не включительно)
 tarrif_accum - указатель на тарифный накопитель 
 */
 typedef struct shedule_item
 {
 	uint32_t start_time;
-	uint32_t end_time;
-	uint32_t *tarif_accum;
+	uint32_t *active_tarif_accum;
+	uint32_t *reactive_tarif_accum;
 }shedule_item;
+
+/*
+!
+*/
+typedef struct daily_program 
+{
+	uint32_t day;
+	uint32_t month;
+	uint32_t year;
+	uint8_t exeptioal;
+	shedule_item* shedule;
+}daily_program;
 
 /*
 !Тарифный план
@@ -48,11 +59,13 @@ typedef struct tariff_plan
 {
 	uint8_t updating_flag;
 	uint32_t date_of_application;
-	shedule_item* shedule;
+	daily_program* tarrif_program;
 	uint32_t checksum;
+	uint8_t number_of_exeptional_days;
 } tariff_plan;
 
 
-void tarifs_init( void );
-uint32_t tarifs_calculate_checksum( tariff_plan* plan );
+void tariffs_init( void );
+uint32_t tariffs_calculate_checksum( tariff_plan* plan );
+uint8_t tariffs_to_BCD_format( uint32_t val );
 #endif

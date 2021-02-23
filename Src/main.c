@@ -87,18 +87,20 @@ int main(void)
 	CS5490 chip_L3;
 	chip_L3.cs5490_huart = &huart3;
 	
-//	if(!cs5490_init(&chip_L1))
-//	{
-//		display_L1();
-//	}
-//	if(!cs5490_init(&chip_L2))
-//	{
-//		display_L2();
-//	}
-//	if(cs5490_init(&chip_L3) == 0)
-//	{
-//		display_L3();
-//	}
+	cs5490_full_callibration(&chip_L3);
+	
+	if(!cs5490_init(&chip_L1))
+	{
+		display_L1();
+	}
+	if(!cs5490_init(&chip_L2))
+	{
+		display_L2();
+	}
+	if(cs5490_init(&chip_L3) == 0)
+	{
+		display_L3();
+	}
 	
 	//Включение необходимых элементов дисплея
 	display_battery();
@@ -116,13 +118,13 @@ int main(void)
 	uint32_t timestamp[2];
 	rtc_get_timestamp(timestamp);
 	
-//	uint8_t test_result = tests_run();
-//	if(test_result)
-//	{
-//		display_ExMark();
-//		display_main_numbers_double(test_result);
-//		HAL_Delay(500);
-//	}
+	uint8_t test_result = tests_run();
+	if(test_result)
+	{
+		display_ExMark();
+		display_main_numbers_double(test_result);
+		HAL_Delay(500);
+	}
 	
 	rs485_start();
 	display_clear_units();
@@ -485,7 +487,7 @@ static void MX_USART1_UART_Init(void)
 {
 
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 2400;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -506,7 +508,7 @@ static void MX_USART2_UART_Init(void)
 {
 
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
+  huart2.Init.BaudRate = 2400;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
@@ -527,7 +529,7 @@ static void MX_USART3_UART_Init(void)
 {
 
   huart3.Instance = USART3;
-  huart3.Init.BaudRate = 115200;
+  huart3.Init.BaudRate = 2400;
   huart3.Init.WordLength = UART_WORDLENGTH_8B;
   huart3.Init.StopBits = UART_STOPBITS_1;
   huart3.Init.Parity = UART_PARITY_NONE;

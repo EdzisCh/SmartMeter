@@ -522,6 +522,16 @@
               <FileType>1</FileType>
               <FilePath>..\Src\commands_handler.c</FilePath>
             </File>
+            <File>
+              <FileName>tariffs.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Inc\tariffs.h</FilePath>
+            </File>
+            <File>
+              <FileName>tariffs.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\tariffs.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
