@@ -11,6 +11,7 @@
 #include "stdio.h"
 #include "M24M01.h"
 #include "S25FL.h"
+#include "tariffs.h"
 
 extern I2C_HandleTypeDef hi2c2;
 extern I2C_HandleTypeDef hi2c3;
@@ -31,7 +32,6 @@ uint8_t test_rtc_init( void );
 uint8_t test_rtc_get_timestamp( void );
 uint8_t test_rtc_date_update( void );
 uint8_t test_rtc_set_time_and_date( void );
-uint8_t test_rtc_set_day( void );
 
 //===================================================================================
 
@@ -47,5 +47,8 @@ uint8_t test_lcd_init( void );
 
 uint8_t tests_day_retrospective( void );
 uint8_t tests_retrospective_last_address( void );
+
+uint8_t tests_day_tariffs_retrospective( void );
+uint8_t tests_tariffs_retrospective_last_address( void );
 
 #endif

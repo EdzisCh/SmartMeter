@@ -3,6 +3,11 @@
 
 #include "stm32l4xx.h"
 #include "RTC.h"
+#include "M24M01.h"
+
+#define MEM_MAX_ADDRESS_OF_TARIFFS_DAY_RETROSPEC 0x3178
+#define MEM_MAX_ADDRESS_OF_TARIFFS_MONTH_RETROSPEC 0x3B78
+#define MEM_MAX_ADDRESS_OF_TARIFFS_YEAR_RETROSPEC 0x3DF8
 
 /*
 ! Тарифные накопители. t_x_e - x - номер накопителя, e - активная или реактивная энергии
@@ -43,12 +48,19 @@ typedef struct shedule_item
 */
 typedef struct daily_program 
 {
-	uint32_t day;
-	uint32_t month;
-	uint32_t year;
+	uint8_t day;
 	uint8_t exeptioal;
 	shedule_item* shedule;
 }daily_program;
+
+
+typedef struct month_program
+{
+	uint8_t month;
+	uint8_t year;
+	uint8_t bissextile;
+	daily_program* daily_programs;
+} month_program;
 
 /*
 !Тарифный план
@@ -59,13 +71,21 @@ typedef struct tariff_plan
 {
 	uint8_t updating_flag;
 	uint32_t date_of_application;
-	daily_program* tarrif_program;
+	month_program* tarrif_program;
 	uint32_t checksum;
-	uint8_t number_of_exeptional_days;
+	uint16_t count_of_exeptional_days;
 } tariff_plan;
 
 
 void tariffs_init( void );
+void tariffs_make_basic_schedule( void );
+void tariffs_make_basic_daily_programs( void );
+void tariffs_make_basic_month_programs( void );
+
+void tarrifs_set_data( uint32_t P, uint32_t Q );
+void tariffs_send_retrospective_to_eeprom( uint8_t date, uint32_t *timestamp );
+
 uint32_t tariffs_calculate_checksum( tariff_plan* plan );
+uint16_t tariffs_get_count_of_exeptional_days( tariff_plan* plan );
 uint8_t tariffs_to_BCD_format( uint32_t val );
 #endif

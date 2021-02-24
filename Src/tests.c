@@ -19,21 +19,25 @@ uint8_t tests_run( void )
 	{
 		return 3;
 	}
-	if(test_rtc_set_day())
+	if(test_rtc_date_update())
 	{
 		return 4;
 	}
-	if(test_rtc_date_update())
+	if(tests_day_retrospective())
 	{
 		return 5;
 	}
-	if(tests_day_retrospective())
+	if(tests_retrospective_last_address())
 	{
 		return 6;
 	}
-	if(tests_retrospective_last_address())
+	if(tests_day_tariffs_retrospective())
 	{
 		return 7;
+	}
+	if(tests_tariffs_retrospective_last_address())
+	{
+		return 8;
 	}
 	
 	return 0;
@@ -92,21 +96,6 @@ uint8_t test_rtc_set_time_and_date( void )
 	if(check_time != date_time[0])
 	{
 		return 0x02;
-	}
-	
-	return 0;
-}
-
-uint8_t test_rtc_set_day( void )
-{
-	uint8_t day = 0x12;
-	rtc_set_day(day);
-	
-	uint8_t check_day = rtc_get_day();
-	
-	if(check_day != day)
-	{
-		return 0x01;
 	}
 	
 	return 0;
@@ -221,7 +210,7 @@ uint8_t tests_day_retrospective( void )
 		Qrel++;
 	}
 	
-	m24m01_get_from_mem(0x00, (uint8_t *) notes_from_mem, 192);
+	m24m01_get_from_mem(0x48, (uint8_t *) notes_from_mem, 192);
 	
 	for(uint8_t i = 0; i < 48; i++)
 	{
@@ -264,7 +253,7 @@ uint8_t tests_retrospective_last_address( void )
 	}
 	mem_handler_send_retrospective_to_eeprom(1, timestamp, &TER);
 	
-	m24m01_get_from_mem(0x00, (uint8_t *) notes_from_mem, 24);
+	m24m01_get_from_mem(0x48, (uint8_t *) notes_from_mem, 24);
 	for(uint8_t i = 0; i < 6; i++)
 	{
 		if(notes_from_mem[i] != notes_to_mem[i])
@@ -273,5 +262,75 @@ uint8_t tests_retrospective_last_address( void )
 		}
 	}
 	
+	return 0;
+}
+
+uint8_t tests_day_tariffs_retrospective( void )
+{
+	uint32_t timestamp_current[2];
+	rtc_get_timestamp(timestamp_current);
+	
+	uint32_t notes_from_mem[48];
+	uint32_t notes_to_mem[48];
+	
+	uint8_t days[10] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10};
+	
+	uint32_t P = 0;
+	uint32_t Q = 0;
+	
+	total_energy_register TER;
+
+	
+	uint8_t notes_to_mem_addr = 0;
+	rtc_set_day(0x00);
+	for(uint8_t i = 1; i<3; i++)
+	{
+		notes_to_mem[notes_to_mem_addr++] = timestamp_current[0];
+		notes_to_mem[notes_to_mem_addr++] = timestamp_current[1];
+		notes_to_mem[notes_to_mem_addr++] = P;
+		notes_to_mem[notes_to_mem_addr++] = Q;
+		notes_to_mem[notes_to_mem_addr++] = P + 1;
+		notes_to_mem[notes_to_mem_addr++] = Q + 1;
+		notes_to_mem[notes_to_mem_addr++] = P + 2;
+		notes_to_mem[notes_to_mem_addr++] = Q + 2;
+		notes_to_mem[notes_to_mem_addr++] = P + 3;
+		notes_to_mem[notes_to_mem_addr++] = Q + 3;
+		notes_to_mem[notes_to_mem_addr++] = P + 4;
+		notes_to_mem[notes_to_mem_addr++] = Q + 4;
+		notes_to_mem[notes_to_mem_addr++] = P + 5;
+		notes_to_mem[notes_to_mem_addr++] = Q + 5;
+		notes_to_mem[notes_to_mem_addr++] = P + 6;
+		notes_to_mem[notes_to_mem_addr++] = Q + 6;
+		
+		uint8_t new_date = rtc_date_update(timestamp_current);
+		if(new_date == 0)
+		{
+			return 0x01;
+		}
+
+		tariffs_send_retrospective_to_eeprom(new_date, timestamp_current);
+		
+	    rtc_get_timestamp(timestamp_current);
+		rtc_set_day(days[i]);
+		
+		P++;
+		Q++;
+	}
+	
+	m24m01_get_from_mem(0x00, (uint8_t *) notes_from_mem, 192);
+	
+	for(uint8_t i = 0; i < 48; i++)
+	{
+		if(notes_from_mem[i] != notes_to_mem[i])
+		{
+			return 0x02;
+		}
+	}
+	
+	return 0;
+}
+
+uint8_t tests_tariffs_retrospective_last_address( void )
+{
 	return 0;
 }

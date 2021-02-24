@@ -13,6 +13,7 @@
 #include "S25FL.h"
 #include "Tests.h"
 #include "string.h"
+#include "tariffs.h"
 /* USER CODE END Includes */
 
 I2C_HandleTypeDef hi2c2;
@@ -72,13 +73,14 @@ int main(void)
 	HAL_GPIO_WritePin(LED_REACT_GPIO_Port, LED_REACT_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
 	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);
-	cycle = 1;
+	cycle = 0;
 
 	display_init();
 
 	display_clear();
 	
 	rtc_set_init_dateTime();
+	tariffs_init();
 
 	CS5490 chip_L1;
 	chip_L1.cs5490_huart = &huart1;
@@ -87,7 +89,7 @@ int main(void)
 	CS5490 chip_L3;
 	chip_L3.cs5490_huart = &huart3;
 	
-	cs5490_full_callibration(&chip_L3);
+	//cs5490_full_callibration(&chip_L3);
 	
 	if(!cs5490_init(&chip_L1))
 	{
@@ -111,6 +113,7 @@ int main(void)
 	double Irms;
 	double freq;
 	double Pavg;
+	double Qavg;
 	
 	data data;
 	total_energy_register TER;
@@ -141,8 +144,9 @@ int main(void)
 	  freq = cs5490_get_freq(&chip_L3);
 	  freq *= 4000;
 	  Pavg = cs5490_get_Pavg(&chip_L3);
+	  Qavg = cs5490_get_Qavg(&chip_L3);
 	  
-	  //накопление
+	  //накопление в РОНЭ
 	  mem_handler_set_data(&data, Pavg, 0, 0, 0, 0, Vrms, freq);
 	  mem_handler_set_total_energy_register(&TER, &data);
 	  
@@ -150,28 +154,28 @@ int main(void)
 	  //выводится только одно значение в 5 циклов
 	  //воеменная реализация 
 	  display_energy_clear();
-	  if ( cycle <= 5 )
+	  if ( cycle == 0 )
 	  {
 		  display_main_numbers_double(Vrms);
 		  display_V();
-	  } else if ( cycle > 5 && cycle <= 10 ) 
+	  } else if ( cycle == 25 ) 
 	  {
 		  display_main_numbers_double(freq);
 		  display_Hz();
-	  } else if ( cycle > 10 && cycle <= 15 ) 
+	  } else if ( cycle == 50 ) 
 	  {
 		  display_main_numbers_double(Pavg);
 		  display_W();
 		  display_active_consumed_energy();
-	  } else {
+	  } else if ( cycle == 75 ){
 		  display_main_numbers_double(Irms);
 		  display_A();
 	  }
 	  
 	  cycle++;
-	  if(cycle == 21)
+	  if(cycle == 100)
 	  {
-		  cycle = 1;
+		  cycle = 0;
 	  }
 	  
 	  //блок формирования ретроспективы РОН
@@ -183,10 +187,8 @@ int main(void)
 	  }
 	  
 	  //---тарифы
-		//блок формирования ретроспективы аналогично регистрам общего накопления
-	  
-	  //---rs485
-	  
+	  //блок формирования ретроспективы аналогично регистрам общего накопления
+	  tarrifs_set_data(Pavg, Qavg);
 	  
 	  //события
 	  

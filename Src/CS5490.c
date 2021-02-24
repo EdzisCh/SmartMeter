@@ -613,7 +613,8 @@ uint8_t cs5490_full_callibration( CS5490 *chip )
 	printf("Regcheck %x\r\n", regcheck_2);
 	
 	//сохраняем данные в EEPROM в самый конец
-	m24m01_save_to_mem(MEM_ADDRESS_I_GAIN_L_1, (uint8_t *) &Igain, 4);
+	//TODO
+	m24m01_save_to_mem(MEM_ADDRESS_I_GAIN_L_3, (uint8_t *) &Igain, 4);
 	m24m01_save_to_mem(MEM_ADDRESS_V_GAIN_L_3, (uint8_t *) &Vgain, 4);
 	m24m01_save_to_mem(MEM_ADDRESS_I_AC_OFF_L_3, (uint8_t *) &Iac_off, 4);
 	m24m01_save_to_mem(MEM_ADDRESS_P_OFF_L_3, (uint8_t *) &Poff, 4);

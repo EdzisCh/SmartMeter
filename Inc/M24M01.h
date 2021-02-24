@@ -12,6 +12,10 @@ extern uint32_t current_address_of_day_retrosective;
 extern uint32_t current_address_of_month_retrosective;
 extern uint32_t current_address_of_year_retrosective;
 
+extern uint32_t current_address_of_tariffs_day_retrosective;
+extern uint32_t current_address_of_tariffs_month_retrosective;
+extern uint32_t current_address_of_tariffs_year_retrosective;
+
 uint8_t m24m01_get_from_mem( uint32_t address, uint8_t* data, uint8_t size_of_data );
 uint8_t m24m01_save_to_mem( uint32_t address, uint8_t* data, uint8_t size_of_data );
 
