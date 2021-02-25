@@ -269,7 +269,9 @@ uint8_t tests_retrospective_last_address( void )
 
 uint8_t tests_day_tariffs_retrospective( void )
 {
-	rtc_set_init_dateTime();
+	//C 00:00 до 7:00 - t_1_a, t_1_r
+	rtc_set_time(0x00);
+	rtc_set_day(0x05);
 	uint32_t timestamp_current[2];
 	rtc_get_timestamp(timestamp_current);
 	tariffs_init();
@@ -277,50 +279,32 @@ uint8_t tests_day_tariffs_retrospective( void )
 	uint32_t notes_from_mem[48];
 	uint32_t notes_to_mem[48];
 	
-	uint8_t days[10] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10};
+	uint8_t days[3] = {0x06, 0x07, 0x08};
 	
-	uint32_t P = 5;
-	uint32_t Q = 5;
-	
+	uint32_t P = 100;
+	uint32_t Q = 200;
+	printf("Sho[1]:%u, %u\r\n", *current_accum_for_P, *current_accum_for_Q);
 	uint8_t notes_to_mem_addr = 0;
-	rtc_set_day(0x01);
-	for(uint8_t i = 2; i<4; i++)
+	
+	for(uint8_t i = 0; i < 4; i++)
 	{
-		notes_to_mem[notes_to_mem_addr++] = timestamp_current[0];
-		notes_to_mem[notes_to_mem_addr++] = timestamp_current[1];
-		notes_to_mem[notes_to_mem_addr++] = P;
-		notes_to_mem[notes_to_mem_addr++] = Q;
-		notes_to_mem[notes_to_mem_addr++] = P + 1;
-		notes_to_mem[notes_to_mem_addr++] = Q + 1;
-		notes_to_mem[notes_to_mem_addr++] = P + 2;
-		notes_to_mem[notes_to_mem_addr++] = Q + 2;
-		notes_to_mem[notes_to_mem_addr++] = P + 3;
-		notes_to_mem[notes_to_mem_addr++] = Q + 3;
-		notes_to_mem[notes_to_mem_addr++] = P + 4;
-		notes_to_mem[notes_to_mem_addr++] = Q + 4;
-		notes_to_mem[notes_to_mem_addr++] = P + 5;
-		notes_to_mem[notes_to_mem_addr++] = Q + 5;
-		notes_to_mem[notes_to_mem_addr++] = P + 6;
-		notes_to_mem[notes_to_mem_addr++] = Q + 6;
-		
 		uint8_t new_date = rtc_date_update(timestamp_current);
+		
 		if(new_date == 0)
 		{
 			return 0x01;
 		}
 				
 		tariffs_set_data( P, Q );
-
+		printf("Sho[2]:%u, %u\r\n", *current_accum_for_P, *current_accum_for_Q);
 		tariffs_send_retrospective_to_eeprom(new_date, timestamp_current);
 		
 	    rtc_get_timestamp(timestamp_current);
 		rtc_set_day(days[i]);
 		
-		P++;
-		Q++;
 	}
 	
-	printf("Sho:%u, %u\r\n", *current_accum_for_P, *current_accum_for_Q);
+	printf("Sho[3]:%u, %u\r\n", *current_accum_for_P, *current_accum_for_Q);
 	
 	m24m01_get_from_mem(0x10F8, (uint8_t *) notes_from_mem, 192);
 	

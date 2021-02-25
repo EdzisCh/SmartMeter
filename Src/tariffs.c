@@ -177,10 +177,11 @@ uint16_t tariffs_get_count_of_exeptional_days( tariff_plan* plan )
 */
 void tariffs_set_data( uint32_t P, uint32_t Q )
 {
-	tariffs_get_current_tariff(); 
+	tariffs_get_current_tariff();
+	printf("SET_P: %u, Q %u\r\n", P, Q);
 	*current_accum_for_P += P;
 	*current_accum_for_Q += Q;
-	
+	printf("AF_SET_P: %u, Q %u\r\n", *current_accum_for_P, *current_accum_for_Q);
 }
 
 /*
@@ -198,11 +199,12 @@ void tariffs_get_current_tariff( void )
 	month = tariffs_from_BCD_format(month);
 	day = tariffs_from_BCD_format(day);
 	
-	//Если беда со значениями - общий тариф
-	if(month > 12 || day > 31)
+	//Если беда со значениями - общий накопитель
+	if(month > 12 || day > 31 || month == 0 || day == 0)
 	{
 		current_accum_for_P = &tariffs_accums.t_10;
 		current_accum_for_Q = &tariffs_accums.t_11;
+		return;
 	}
 	
 	uint32_t start_time = 0, end_time = 0, date = 0;
