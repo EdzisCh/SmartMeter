@@ -5,10 +5,10 @@
 #include "stdio.h"
 
 //Ничальная дата и время в BCD формате
-#define INITIAL_HOUR 0x10
-#define INITIAL_MINUTE 0x10
+#define INITIAL_HOUR 0x18
+#define INITIAL_MINUTE 0x33
 #define INITIAL_SECUNDE 0x00
-#define INITIAL_DAY 0x12
+#define INITIAL_DAY 0x25
 #define INITIAL_MONTH 0x02
 #define INITIAL_YEAR 0x21
 

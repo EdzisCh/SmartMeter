@@ -8,6 +8,8 @@
 #define MEM_MAX_ADDRESS_OF_TARIFFS_DAY_RETROSPEC 0x3178
 #define MEM_MAX_ADDRESS_OF_TARIFFS_MONTH_RETROSPEC 0x3B78
 #define MEM_MAX_ADDRESS_OF_TARIFFS_YEAR_RETROSPEC 0x3DF8
+extern uint32_t *current_accum_for_P;
+extern uint32_t *current_accum_for_Q;
 
 /*
 ! Тарифные накопители. t_x_e - x - номер накопителя, e - активная или реактивная энергии
@@ -82,10 +84,13 @@ void tariffs_make_basic_schedule( void );
 void tariffs_make_basic_daily_programs( void );
 void tariffs_make_basic_month_programs( void );
 
-void tarrifs_set_data( uint32_t P, uint32_t Q );
+void tariffs_update_plan( void );
+void tariffs_set_data( uint32_t P, uint32_t Q );
+void tariffs_get_current_tariff( void );
 void tariffs_send_retrospective_to_eeprom( uint8_t date, uint32_t *timestamp );
 
 uint32_t tariffs_calculate_checksum( tariff_plan* plan );
 uint16_t tariffs_get_count_of_exeptional_days( tariff_plan* plan );
 uint8_t tariffs_to_BCD_format( uint32_t val );
+uint8_t tariffs_from_BCD_format( uint32_t val );
 #endif

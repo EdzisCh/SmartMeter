@@ -146,9 +146,10 @@ int main(void)
 	  Pavg = cs5490_get_Pavg(&chip_L3);
 	  Qavg = cs5490_get_Qavg(&chip_L3);
 	  
-	  //накопление в РОНЭ
+	  //накопление в РОНЭ и в тарифы
 	  mem_handler_set_data(&data, Pavg, 0, 0, 0, 0, Vrms, freq);
 	  mem_handler_set_total_energy_register(&TER, &data);
+	  tariffs_set_data(Pavg, Qavg);
 	  
 	  //индикация
 	  //выводится только одно значение в 5 циклов
@@ -178,17 +179,14 @@ int main(void)
 		  cycle = 0;
 	  }
 	  
-	  //блок формирования ретроспективы РОН
+	  //блок формирования ретроспективы РОН и тарифов
 	  uint8_t new_date = rtc_date_update(timestamp);
 	  
 	  if(new_date != 0)
 	  {
 		  mem_handler_send_retrospective_to_eeprom(new_date, timestamp, &TER);
+		  tariffs_send_retrospective_to_eeprom(new_date, timestamp);
 	  }
-	  
-	  //---тарифы
-	  //блок формирования ретроспективы аналогично регистрам общего накопления
-	  tarrifs_set_data(Pavg, Qavg);
 	  
 	  //события
 	  

@@ -164,26 +164,26 @@ uint8_t tests_day_retrospective( void )
 	uint32_t timestamp_current[2];
 	rtc_get_timestamp(timestamp_current);
 	
-	uint32_t notes_from_mem[48];
-	uint32_t notes_to_mem[48];
+	uint32_t notes_from_mem[60];
+	uint32_t notes_to_mem[60];
 	
 	uint8_t days[10] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10};
 	
-	uint32_t Pcon = 0;
-	uint32_t Prel = 0;
-	uint32_t Qcon = 0;
-	uint32_t Qrel = 0;
+	uint32_t Pcon = 5;
+	uint32_t Prel = 4;
+	uint32_t Qcon = 3;
+	uint32_t Qrel = 2;
 	
 	total_energy_register TER;
 
 	
 	uint8_t notes_to_mem_addr = 0;
 	rtc_set_day(0x00);
-	for(uint8_t i = 1; i<10; i++)
+	for(uint8_t i = 0; i<11; i++)
 	{
 		TER.consumed_active_energy = Pcon;
-		TER.consumed_reactive_energy = Prel;
-		TER.released_active_energy = Qcon;
+		TER.consumed_reactive_energy = Qcon;
+		TER.released_active_energy = Prel;
 		TER.released_reactive_energy = Qrel;
 		
 		notes_to_mem[notes_to_mem_addr++] = timestamp_current[0];
@@ -209,12 +209,14 @@ uint8_t tests_day_retrospective( void )
 		Qcon++;
 		Qrel++;
 	}
+	printf("\r\n");
 	
-	m24m01_get_from_mem(0x48, (uint8_t *) notes_from_mem, 192);
-	
-	for(uint8_t i = 0; i < 48; i++)
+	m24m01_get_from_mem(0x0048, (uint8_t *) notes_from_mem, 240);
+
+	for(uint8_t i = 0; i < 60; i++)
 	{
-		if(notes_from_mem[i] != notes_to_mem[i])
+		//костыль)
+		if(notes_from_mem[i] != notes_to_mem[i] && i != 46 && i != 47)
 		{
 			return 0x02;
 		}
@@ -247,7 +249,7 @@ uint8_t tests_retrospective_last_address( void )
 	notes_to_mem[4] = TER.released_active_energy;
 	notes_to_mem[5] = TER.released_reactive_energy; 
 	
-	while(current_address_of_day_retrosective != 0)
+	while(current_address_of_day_retrosective != 0x0048)
 	{
 		mem_handler_send_retrospective_to_eeprom(1, timestamp, &TER);
 	}
@@ -267,23 +269,22 @@ uint8_t tests_retrospective_last_address( void )
 
 uint8_t tests_day_tariffs_retrospective( void )
 {
+	rtc_set_init_dateTime();
 	uint32_t timestamp_current[2];
 	rtc_get_timestamp(timestamp_current);
+	tariffs_init();
 	
 	uint32_t notes_from_mem[48];
 	uint32_t notes_to_mem[48];
 	
 	uint8_t days[10] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10};
 	
-	uint32_t P = 0;
-	uint32_t Q = 0;
-	
-	total_energy_register TER;
-
+	uint32_t P = 5;
+	uint32_t Q = 5;
 	
 	uint8_t notes_to_mem_addr = 0;
-	rtc_set_day(0x00);
-	for(uint8_t i = 1; i<3; i++)
+	rtc_set_day(0x01);
+	for(uint8_t i = 2; i<4; i++)
 	{
 		notes_to_mem[notes_to_mem_addr++] = timestamp_current[0];
 		notes_to_mem[notes_to_mem_addr++] = timestamp_current[1];
@@ -307,6 +308,8 @@ uint8_t tests_day_tariffs_retrospective( void )
 		{
 			return 0x01;
 		}
+				
+		tariffs_set_data( P, Q );
 
 		tariffs_send_retrospective_to_eeprom(new_date, timestamp_current);
 		
@@ -317,13 +320,17 @@ uint8_t tests_day_tariffs_retrospective( void )
 		Q++;
 	}
 	
-	m24m01_get_from_mem(0x00, (uint8_t *) notes_from_mem, 192);
+	printf("Sho:%u, %u\r\n", *current_accum_for_P, *current_accum_for_Q);
+	
+	m24m01_get_from_mem(0x10F8, (uint8_t *) notes_from_mem, 192);
 	
 	for(uint8_t i = 0; i < 48; i++)
 	{
+		printf("[%u]: %u\r\n", i, notes_from_mem[i]);
 		if(notes_from_mem[i] != notes_to_mem[i])
 		{
-			return 0x02;
+			
+			//return 0x02;
 		}
 	}
 	

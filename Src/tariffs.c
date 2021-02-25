@@ -12,6 +12,8 @@ tariff_plan first_plan;
 tariff_plan second_plan;
 
 tariff_plan* current_plan;
+uint32_t *current_accum_for_P;
+uint32_t *current_accum_for_Q;
 
 /*
 ! Инициализация первоначальная 
@@ -144,7 +146,7 @@ void tariffs_make_basic_month_programs( void )
 	uint8_t year = INITIAL_YEAR;
 	for(uint8_t i = 0; i < 12; i++)
 	{
-		month = tariffs_to_BCD_format(month++);
+		month = tariffs_to_BCD_format(temp++);
 		month_programs[i].month = month;
 		month_programs[i].bissextile = 0;
 		month_programs[i].year = year;
@@ -173,15 +175,40 @@ uint16_t tariffs_get_count_of_exeptional_days( tariff_plan* plan )
 !Накопление измеренной энергии. Последоваельный поиск по дате
 //TODO начинать с метки 
 */
-void tarrifs_set_data( uint32_t P, uint32_t Q )
+void tariffs_set_data( uint32_t P, uint32_t Q )
+{
+	tariffs_get_current_tariff(); 
+	*current_accum_for_P += P;
+	*current_accum_for_Q += Q;
+	
+}
+
+/*
+!Получаем через поиск текущий тарифный накопитель. Если таковой не находиться, тарифным
+накопителем становиться общий накопитель
+*/
+void tariffs_get_current_tariff( void )
 {
 	uint32_t timestamp[2];
 	rtc_get_timestamp(timestamp);
+
+	//Для уменьшения поиска выбирается текущее время/дата
+	uint8_t month = (timestamp[1] & 0x0000FF00) >> 8;
+	uint8_t day = (timestamp[1] & 0x00FF0000) >> 16;
+	month = tariffs_from_BCD_format(month);
+	day = tariffs_from_BCD_format(day);
+	
+	//Если беда со значениями - общий тариф
+	if(month > 12 || day > 31)
+	{
+		current_accum_for_P = &tariffs_accums.t_10;
+		current_accum_for_Q = &tariffs_accums.t_11;
+	}
 	
 	uint32_t start_time = 0, end_time = 0, date = 0;
-	for(uint8_t i = 0; i < 12; i++)
+	for(uint8_t i = month-1; i < 12; i++)
 	{
-		for(uint8_t j = 0; j < 32; j++)
+		for(uint8_t j = day-1; j < 32; j++)
 		{
 			date = (date + current_plan->tarrif_program[i].daily_programs[j].day) << 8;
 			date = (date + current_plan->tarrif_program[i].month) << 8;
@@ -194,8 +221,8 @@ void tarrifs_set_data( uint32_t P, uint32_t Q )
 					end_time = current_plan->tarrif_program[i].daily_programs[j].shedule[k+1].start_time;
 					if((timestamp[0] >= start_time) && (timestamp[0] < end_time))
 					{
-						current_plan->tarrif_program[i].daily_programs[j].shedule[k].active_tarif_accum += P;
-						current_plan->tarrif_program[i].daily_programs[j].shedule[k].reactive_tarif_accum += Q;
+						current_accum_for_P = current_plan->tarrif_program[i].daily_programs[j].shedule[k].active_tarif_accum;
+						current_accum_for_Q = current_plan->tarrif_program[i].daily_programs[j].shedule[k].reactive_tarif_accum;
 						return;
 					}
 				}
@@ -203,10 +230,12 @@ void tarrifs_set_data( uint32_t P, uint32_t Q )
 			date = 0;
 		}
 	}
+	current_accum_for_P = &tariffs_accums.t_10;
+	current_accum_for_Q = &tariffs_accums.t_11;
 }
 
 /*
-!
+!Формирование ретроспективы, аналогично ретроспективы РОНЭ
 */
 void tariffs_send_retrospective_to_eeprom( uint8_t date, uint32_t *timestamp )
 {
@@ -250,6 +279,19 @@ void tariffs_send_retrospective_to_eeprom( uint8_t date, uint32_t *timestamp )
 }
 
 /*
+!
+*/
+void tariffs_update_plan( void )
+{
+	if(HAL_RTC_GetState(&hrtc) == HAL_OK)
+	{
+		
+	} else {
+		
+	}
+}
+
+/*
 ! Функция для преобразования десятичного времени в удобочитаемый для человека и
 понятный RTC. Если поступет на вход 15 часов (десятичный формат) - на выходе получаем 15
 в 16ричном формате (21 в десятичном). Аналогично для даты
@@ -271,6 +313,31 @@ uint8_t tariffs_to_BCD_format( uint32_t val )
 	} else if(val >= 50 && val < 60)
 	{
 		val += 30;
+	}
+	
+	return val;
+}
+
+/*
+! Функция обратная tariffs_to_BCD_format().
+*/
+uint8_t tariffs_from_BCD_format( uint32_t val )
+{
+	if(val > 0x9 && val < 0x20)
+	{
+		val -= 6;
+	} else if (val >= 0x20 && val < 0x30)
+	{
+		val -= 12;
+	} else if (val >= 0x30 && val < 0x40)
+	{
+		val -= 18;
+	} else if (val >= 0x40 && val < 0x50)
+	{
+		val -= 24;
+	} else if(val >= 0x50 && val < 0x60)
+	{
+		val -= 30;
 	}
 	
 	return val;

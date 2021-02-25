@@ -53,18 +53,18 @@ void mem_handler_send_retrospective_to_eeprom( uint8_t date, uint32_t *timestamp
 		m24m01_save_to_mem(current_address_of_day_retrosective, (uint8_t *) data_to_mem, 24);
 		current_address_of_day_retrosective += 24;
 		if(current_address_of_day_retrosective >= MEM_MAX_ADDRESS_OF_DAY_RETROSPEC)
-			current_address_of_day_retrosective = 0x00;
+			current_address_of_day_retrosective = 0x48;
 	} else if (date == 2)
 	{
 		m24m01_save_to_mem(current_address_of_month_retrosective, (uint8_t *) data_to_mem, 24);
 		current_address_of_month_retrosective += 24;
 		if(current_address_of_month_retrosective >= MEM_MAX_ADDRESS_OF_MONTH_RETROSPEC)
-			current_address_of_month_retrosective = 0x0C00;
+			current_address_of_month_retrosective = 0x0C48;
 	} else if (date == 3)
 	{
 		m24m01_save_to_mem(current_address_of_year_retrosective, (uint8_t *) data_to_mem, 24);
 		current_address_of_year_retrosective += 24;
 		if(current_address_of_year_retrosective >= MEM_MAX_ADDRESS_OF_YEAR_RETROSPEC)
-			current_address_of_year_retrosective = 0x0FC0;
+			current_address_of_year_retrosective = 0x1008;
 	}
 }
