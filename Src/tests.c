@@ -269,23 +269,23 @@ uint8_t tests_retrospective_last_address( void )
 
 uint8_t tests_day_tariffs_retrospective( void )
 {
+	rtc_set_date(0x260221);
 	//C 00:00 до 7:00 - t_1_a, t_1_r
 	rtc_set_time(0x00);
-	rtc_set_day(0x05);
 	uint32_t timestamp_current[2];
 	rtc_get_timestamp(timestamp_current);
-	tariffs_init();
+	//tariffs_init();
 	
 	uint32_t notes_from_mem[48];
 	uint32_t notes_to_mem[48];
 	
 	uint8_t days[3] = {0x06, 0x07, 0x08};
 	
-	uint32_t P = 100;
-	uint32_t Q = 200;
-	printf("Sho[1]:%u, %u\r\n", *current_accum_for_P, *current_accum_for_Q);
-	uint8_t notes_to_mem_addr = 0;
+	uint32_t P = 1;
+	uint32_t Q = 5;
 	
+	uint8_t notes_to_mem_addr = 0;
+	rtc_set_day(0x05);
 	for(uint8_t i = 0; i < 4; i++)
 	{
 		uint8_t new_date = rtc_date_update(timestamp_current);

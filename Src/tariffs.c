@@ -178,10 +178,9 @@ uint16_t tariffs_get_count_of_exeptional_days( tariff_plan* plan )
 void tariffs_set_data( uint32_t P, uint32_t Q )
 {
 	tariffs_get_current_tariff();
-	printf("SET_P: %u, Q %u\r\n", P, Q);
+	
 	*current_accum_for_P += P;
 	*current_accum_for_Q += Q;
-	printf("AF_SET_P: %u, Q %u\r\n", *current_accum_for_P, *current_accum_for_Q);
 }
 
 /*

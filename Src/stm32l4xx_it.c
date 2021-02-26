@@ -75,6 +75,10 @@ void PendSV_Handler(void)
 
 void SysTick_Handler(void)
 {
+	HAL_IncTick();
+	HAL_SYSTICK_IRQHandler();
+  /* USER CODE BEGIN SysTick_IRQn 1 */
+	
 	GPIO_PinState key_1, key_2, key_3;
 
 	key_1 = HAL_GPIO_ReadPin(KEY_1_GPIO_Port, KEY_1_Pin);
@@ -93,10 +97,6 @@ void SysTick_Handler(void)
 		}
 	}
 	event_handler_beep_off();
-	
-	HAL_IncTick();
-	HAL_SYSTICK_IRQHandler();
-  /* USER CODE BEGIN SysTick_IRQn 1 */
 	
   /* USER CODE END SysTick_IRQn 1 */
 }

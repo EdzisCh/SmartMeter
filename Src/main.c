@@ -10,9 +10,8 @@
 #include "RS485.h"
 #include "stdio.h"
 #include "M24M01.h"
-#include "S25FL.h"
+//#include "S25FL.h"
 #include "Tests.h"
-#include "string.h"
 #include "tariffs.h"
 /* USER CODE END Includes */
 
@@ -72,7 +71,7 @@ int main(void)
 	HAL_GPIO_WritePin(LED_ACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(LED_REACT_GPIO_Port, LED_REACT_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
-	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);
+	
 	cycle = 0;
 
 	display_init();
@@ -130,7 +129,7 @@ int main(void)
 	}
 	
 	rs485_start();
-	display_clear_units();
+	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN WHILE */
@@ -149,7 +148,7 @@ int main(void)
 	  //накопление в РОНЭ и в тарифы
 	  mem_handler_set_data(&data, Pavg, 0, 0, 0, 0, Vrms, freq);
 	  mem_handler_set_total_energy_register(&TER, &data);
-	  tariffs_set_data(Pavg, Qavg);
+	 // tariffs_set_data(Pavg, Qavg);
 	  
 	  //индикация
 	  //выводится только одно значение в 5 циклов
