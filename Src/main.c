@@ -120,13 +120,13 @@ int main(void)
 	uint32_t timestamp[2];
 	rtc_get_timestamp(timestamp);
 	
-	uint8_t test_result = tests_run();
-	if(test_result)
-	{
-		display_ExMark();
-		display_main_numbers_double(test_result);
-		HAL_Delay(500);
-	}
+//	uint8_t test_result = tests_run();
+//	if(test_result)
+//	{
+//		display_ExMark();
+//		display_main_numbers_double(test_result);
+//		HAL_Delay(500);
+//	}
 	
 	rs485_start();
 	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);

@@ -12,8 +12,13 @@
 */
 #include "commands_handler.h"
 
-//Обрабатываемые комманды
+char *acknowledge = "\r\n";
 
+//Обрабатываемые комманды
+const char* connect_cmd = "connect\r\n";
+const char* get_time_cmd = "get_time\r\n";
+const char* get_data_cmd = "get_data\r\n";
+	
 //Данные команды идут с аргументом после ':'
 const char* set_hour_cmd = "set_hour:\r\n";
 const char* set_minute_cmd = "set_minute:\r\n";
@@ -72,6 +77,21 @@ void cmd_handler_commands_init()
 	set_year_cmd_def.command = set_year_cmd;
 	set_year_cmd_def.callback_func = set_year_callback;
 	registered_commands[cmd_count++] = set_year_cmd_def;
+	
+	command_defenition connect_cmd_def;
+	connect_cmd_def.command = connect_cmd;
+	connect_cmd_def.callback_func = connect_callback;
+	registered_commands[cmd_count++] = connect_cmd_def;
+	
+	command_defenition get_time_cmd_def;
+	get_time_cmd_def.command = get_time_cmd;
+	get_time_cmd_def.callback_func = get_time_callback;
+	registered_commands[cmd_count++] = get_time_cmd_def;
+	
+	command_defenition get_data_cmd_def;
+	get_data_cmd_def.command = get_data_cmd;
+	get_data_cmd_def.callback_func = get_data_callback;
+	registered_commands[cmd_count++] = get_data_cmd_def;
 	
 }
 
@@ -184,9 +204,82 @@ uint8_t cmd_handler_to_BCD_format( uint8_t arg )
 	return arg;
 }
 
+uint8_t cmd_handler_get_from_BCD_format( uint32_t val )
+{
+	if(val > 0x9 && val < 0x20)
+	{
+		val -= 6;
+	} else if (val >= 0x20 && val < 0x30)
+	{
+		val -= 12;
+	} else if (val >= 0x30 && val < 0x40)
+	{
+		val -= 18;
+	} else if (val >= 0x40 && val < 0x50)
+	{
+		val -= 24;
+	} else if(val >= 0x50 && val < 0x60)
+	{
+		val -= 30;
+	}
+	
+	return val;
+}
+
 //===================================================================================
 
 //Функции, соответствующие командам
+
+/*
+!
+*/
+void connect_callback( uint32_t arg )
+{	
+	char *ack = "ack\r\n";
+	
+	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_SET);
+	HAL_UART_Transmit(&huart5, (uint8_t *)ack, 5, 100);
+	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
+}
+
+/*
+!
+*/
+void get_time_callback( uint32_t arg )
+{
+	uint32_t time = rtc_get_time();
+	
+	uint8_t hours = (time & 0x00FF0000) >> 16;
+	uint8_t minutes = (time & 0x0000FF00) >> 8;
+	uint8_t seconds = (time & 0x000000FF);
+	
+	hours = cmd_handler_get_from_BCD_format(hours);
+	minutes = cmd_handler_get_from_BCD_format(minutes);
+	seconds = cmd_handler_get_from_BCD_format(seconds);
+	
+	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_SET);
+	HAL_UART_Transmit(&huart5, &hours, 1, 100);
+	HAL_UART_Transmit(&huart5, &minutes, 1, 100);
+	HAL_UART_Transmit(&huart5, &seconds, 1, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *) acknowledge, 2, 100);
+	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
+}
+
+/*
+!
+*/
+void get_data_callback( uint32_t arg )
+{
+	double data = 5.1488;
+	//uint32_t data = 0x00142343;
+	
+	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_SET);
+	
+	HAL_UART_Transmit(&huart5, (uint8_t *)(&data), 4, 100);
+	
+	HAL_UART_Transmit(&huart5, (uint8_t *) acknowledge, 2, 100);
+	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
+}
 
 /*
 !Меняет часы
