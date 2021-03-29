@@ -32,6 +32,8 @@ UART_HandleTypeDef huart3;
 /* USER CODE BEGIN PV */
 extern __IO uint32_t uwTick;
 uint8_t cycle;
+data current_data;
+total_energy_register TER;
 /* USER CODE END PV */
 
 void SystemClock_Config(void);
@@ -113,10 +115,7 @@ int main(void)
 	double freq;
 	double Pavg;
 	double Qavg;
-	
-	data data;
-	total_energy_register TER;
-	
+
 	uint32_t timestamp[2];
 	rtc_get_timestamp(timestamp);
 	
@@ -129,7 +128,7 @@ int main(void)
 //	}
 	
 	rs485_start();
-	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);
+	//HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN WHILE */
@@ -146,8 +145,8 @@ int main(void)
 	  Qavg = cs5490_get_Qavg(&chip_L3);
 	  
 	  //накопление в РОНЭ и в тарифы
-	  mem_handler_set_data(&data, Pavg, 0, 0, 0, 0, Vrms, freq);
-	  mem_handler_set_total_energy_register(&TER, &data);
+	  mem_handler_set_data(&current_data, Pavg, Qavg, 0, 90, Irms, Vrms, freq);
+	  mem_handler_set_total_energy_register(&TER, &current_data);
 	 // tariffs_set_data(Pavg, Qavg);
 	  
 	  //индикация

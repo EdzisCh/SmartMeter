@@ -248,19 +248,31 @@ void connect_callback( uint32_t arg )
 void get_time_callback( uint32_t arg )
 {
 	uint32_t time = rtc_get_time();
+	uint32_t date = rtc_get_date();
 	
 	uint8_t hours = (time & 0x00FF0000) >> 16;
 	uint8_t minutes = (time & 0x0000FF00) >> 8;
 	uint8_t seconds = (time & 0x000000FF);
 	
+	uint8_t day = (date & 0x00FF0000) >> 16;
+	uint8_t month = (date & 0x0000FF00) >> 8;
+	uint8_t year = (date & 0x000000FF);
+	
 	hours = cmd_handler_get_from_BCD_format(hours);
 	minutes = cmd_handler_get_from_BCD_format(minutes);
 	seconds = cmd_handler_get_from_BCD_format(seconds);
+	
+	day = cmd_handler_get_from_BCD_format(day);
+	month = cmd_handler_get_from_BCD_format(month);
+	year = cmd_handler_get_from_BCD_format(year);
 	
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_SET);
 	HAL_UART_Transmit(&huart5, &hours, 1, 100);
 	HAL_UART_Transmit(&huart5, &minutes, 1, 100);
 	HAL_UART_Transmit(&huart5, &seconds, 1, 100);
+	HAL_UART_Transmit(&huart5, &day, 1, 100);
+	HAL_UART_Transmit(&huart5, &month, 1, 100);
+	HAL_UART_Transmit(&huart5, &year, 1, 100);
 	HAL_UART_Transmit(&huart5, (uint8_t *) acknowledge, 2, 100);
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
 }
@@ -270,12 +282,22 @@ void get_time_callback( uint32_t arg )
 */
 void get_data_callback( uint32_t arg )
 {
-	double data = 5.1488;
-	//uint32_t data = 0x00142343;
+	char *r = ":";
 	
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_SET);
 	
-	HAL_UART_Transmit(&huart5, (uint8_t *)(&data), 4, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *)(&current_data.P), 8, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *) r, 1, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *)(&current_data.Q), 8, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *) r, 1, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *)(&current_data.freq), 8, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *) r, 1, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *)(&current_data.I), 8, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *) r, 1, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *)(&current_data.U), 8, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *) r, 1, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *)(&current_data.cosPhi), 8, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *) r, 1, 100);
 	
 	HAL_UART_Transmit(&huart5, (uint8_t *) acknowledge, 2, 100);
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);

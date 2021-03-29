@@ -5,11 +5,14 @@
 #include "string.h"
 #include "ring_buffer.h"
 #include "RTC.h"
+#include "mem_handler.h"
 
 //Максимальное количество команд 
 #define MAX_CMD_COUNT 15
 
-extern UART_HandleTypeDef huart5; 
+extern UART_HandleTypeDef huart5;
+extern data current_data;
+extern total_energy_register TER;
 
 typedef void (*cmd_callback_ptr) ( uint32_t );
 

@@ -4,10 +4,10 @@
 /**
 !Сохранение данных из змериеля в промежуточные накопители
 */
-void mem_handler_set_data( data *data, uint32_t P, 
-						   uint32_t Q, uint32_t S, 
-                           uint32_t cosPhi, uint32_t I, 
-						   uint32_t U, uint32_t freq )
+void mem_handler_set_data( data *data, double P, 
+						   double Q, double S, 
+                           double cosPhi, double I, 
+						   double U, double freq )
 {
 	data->cosPhi = cosPhi;
 	data->freq = freq;
