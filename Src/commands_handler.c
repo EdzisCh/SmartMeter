@@ -298,6 +298,12 @@ void get_data_callback( uint32_t arg )
 	HAL_UART_Transmit(&huart5, (uint8_t *) r, 1, 100);
 	HAL_UART_Transmit(&huart5, (uint8_t *)(&current_data.cosPhi), 8, 100);
 	HAL_UART_Transmit(&huart5, (uint8_t *) r, 1, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *)(&current_data.Iinst), 8, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *) r, 1, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *)(&current_data.Uinst), 8, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *) r, 1, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *)(&current_data.Pinst), 8, 100);
+	HAL_UART_Transmit(&huart5, (uint8_t *) r, 1, 100);
 	
 	HAL_UART_Transmit(&huart5, (uint8_t *) acknowledge, 2, 100);
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);

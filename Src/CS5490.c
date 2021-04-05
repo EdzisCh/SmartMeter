@@ -226,7 +226,7 @@ void cs5490_halt_conversation( CS5490 *chip )
 double cs5490_get_gain_V( CS5490 *chip )
 {
 	cs5490_read(chip, 16, 35);
-	//return cs5490_convert_to_double(chip, 22, 0x02);
+	
 	uint32_t hex_value = cs5490_concatData(chip);
 	double factor = 1/(pow(2, 22) - 1);
 	factor *= (double) hex_value;
@@ -237,7 +237,6 @@ double cs5490_get_gain_V( CS5490 *chip )
 double cs5490_get_gain_I( CS5490 *chip )
 {
 	cs5490_read(chip, 16, 33);
-	//return cs5490_convert_to_double(chip, 22, 0x02);
 	
 	uint32_t hex_value = cs5490_concatData(chip);
 	double factor = 1/(pow(2, 22) - 1);
@@ -248,12 +247,15 @@ double cs5490_get_gain_I( CS5490 *chip )
 
 void cs5490_set_gain_V( CS5490 *chip, double value )
 {
-	uint32_t val = cs5490_convert_to_binary(22, 0x02, value);
+	uint32_t val = value / (1/(pow(2,22) - 1));
+	
 	cs5490_write( chip, 16, 35, val);
 }
 
 void cs5490_set_gain_I( CS5490 *chip, double value ){
-	uint32_t val = cs5490_convert_to_binary(22, 0x02, value);
+	
+	uint32_t val = value / (1/(pow(2,22) - 1));
+	
 	cs5490_write( chip, 16, 33, val);
 }
 
@@ -453,6 +455,7 @@ uint32_t cs5490_get_RegChk( CS5490 *chip )
 
 uint8_t cs5490_full_callibration( CS5490 *chip )
 {
+	printf("/-----Calibration-----/\r\n");
 	//1 reset
 	cs5490_reset(chip);
 	chip->cs5490_read_OK = READ_OPERATION_SUCCESS;
@@ -479,10 +482,10 @@ uint8_t cs5490_full_callibration( CS5490 *chip )
 	cs5490_write(chip, 0x10, 0x00, reset);
 	
 	//5 set scale reg (no full load available)
-	cs5490_write(chip, 0x12, 0x3F, SCALE_REGISTER_VALUE);
+	//cs5490_write(chip, 0x12, 0x3F, SCALE_REGISTER_VALUE);
 	
 	//6 apply ref. voltage and current
-	printf("apply\r\n");
+	printf("Before\r\n");
 	
 	//7 start continious conv
 	cs5490_continious_conversation(chip);
@@ -567,6 +570,8 @@ uint8_t cs5490_full_callibration( CS5490 *chip )
 	cs5490_continious_conversation(chip);
 	HAL_Delay(500);
 	
+	printf("Afeter\r\n");
+	
 	//16 verify accuracy
 	rmsV = cs5490_get_Vrms(chip);
 	freq = cs5490_get_freq(chip);
@@ -592,11 +597,16 @@ uint8_t cs5490_full_callibration( CS5490 *chip )
 	//printf("P: %f W\r\n", P * POWER_FULLSCALE);
 	printf("P: %f W\r\n", P);	
 	
-	uint32_t Igain = cs5490_readReg(chip, 16, 33);
-	uint32_t Vgain = cs5490_readReg(chip, 16, 35);
-	uint32_t Iac_off = cs5490_readReg(chip, 16, 37);
-	uint32_t Poff = cs5490_readReg(chip, 16, 36);
-	uint32_t PF_2 = cs5490_readReg(chip, 16, 21);
+	uint32_t IgainHex = cs5490_readReg(chip, 16, 33);
+	double Igain = IgainHex * 1/(pow(2,22) - 1);
+	uint32_t VgainHex = cs5490_readReg(chip, 16, 35);
+	double Vgain = VgainHex * 1/(pow(2,22) - 1);
+	uint32_t Iac_offHex = cs5490_readReg(chip, 16, 37);
+	double Iac_off =  Iac_offHex * 1/(pow(2,24) - 1);
+	uint32_t PoffHex = cs5490_readReg(chip, 16, 36);
+	double Poff = PoffHex * 1/(pow(2,23) - 1);
+	uint32_t PF_2_HEX = cs5490_readReg(chip, 16, 21);
+	double PF_2 = PF_2_HEX * 1/(pow(2,23) - 1);
 	uint32_t regcheck_2 = cs5490_readReg(chip, 16, 1);
 
 	if(!chip->cs5490_read_OK)
@@ -605,12 +615,13 @@ uint8_t cs5490_full_callibration( CS5490 *chip )
 		return 0x11;
 	}
 	
-	printf("Igain %x\r\n", Igain);
-	printf("Vgain %x\r\n", Vgain);
-	printf("Iacoff %x\r\n", Iac_off);
-	printf("Poff %x\r\n", Poff);
-	printf("PF_2 %x\r\n", PF_2);
+	printf("Igain %f\r\n", Igain);
+	printf("Vgain %f\r\n", Vgain);
+	printf("Iacoff %f\r\n", Iac_off);
+	printf("Poff %f\r\n", Poff);
+	printf("PF_2 %f\r\n", PF_2);
 	printf("Regcheck %x\r\n", regcheck_2);
+	printf("/-----End of Calibration-----/\r\n");
 	
 	//сохраняем данные в EEPROM в самый конец
 	//TODO

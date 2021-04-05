@@ -7,7 +7,9 @@
 void mem_handler_set_data( data *data, double P, 
 						   double Q, double S, 
                            double cosPhi, double I, 
-						   double U, double freq )
+						   double U, double freq,
+							double Iinst, double Uinst,
+							double Pinst	)
 {
 	data->cosPhi = cosPhi;
 	data->freq = freq;
@@ -16,6 +18,9 @@ void mem_handler_set_data( data *data, double P,
 	data->Q += Q;
 	data->S += S;
 	data->U = U;
+	data->Iinst = Iinst;
+	data->Uinst = Uinst;
+	data->Pinst = Pinst;
 }
 
 void mem_handler_set_total_energy_register( total_energy_register *regs, data *data )

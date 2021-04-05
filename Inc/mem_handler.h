@@ -19,7 +19,10 @@ typedef struct data
 	double cosPhi;
 	double I;
 	double U;
-	double freq;	
+	double freq;
+	double Iinst;
+	double Uinst;
+	double Pinst;
 } data;
 
 
@@ -35,7 +38,7 @@ typedef struct total_energy_register
 	
 } total_energy_register;
 
-void mem_handler_set_data( data *data, double P, double Q, double S, double cosPhi, double I, double U, double freq );
+void mem_handler_set_data( data *data, double P, double Q, double S, double cosPhi, double I, double U, double freq, double Iinst, double Uinst, double Pisnt );
 void mem_handler_set_total_energy_register( total_energy_register *regs, data *data );
 void mem_handler_get_data( void );
 void mem_handler_get_total_energy_register( void );

@@ -15,7 +15,7 @@ int rs485_send_byte( uint8_t byte )
 	int output;
 	
 	//Задержка для предотвращения потерь 
-	HAL_Delay(10);
+	HAL_Delay(40);
 	
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_SET);
 	output = HAL_UART_Transmit(&huart5, &byte, sizeof(byte), 100);

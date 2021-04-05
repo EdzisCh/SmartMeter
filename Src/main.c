@@ -90,26 +90,29 @@ int main(void)
 	CS5490 chip_L3;
 	chip_L3.cs5490_huart = &huart3;
 	
-	//cs5490_full_callibration(&chip_L3);
-	
-	if(!cs5490_init(&chip_L1))
-	{
+	cs5490_full_callibration(&chip_L2);
+
+//	if(!cs5490_init(&chip_L1))
+//	{
 		display_L1();
-	}
-	if(!cs5490_init(&chip_L2))
-	{
+//	}
+//	if(!cs5490_init(&chip_L2))
+//	{
 		display_L2();
-	}
-	if(cs5490_init(&chip_L3) == 0)
-	{
+//	}
+//	if(cs5490_init(&chip_L3) == 0)
+//	{
 		display_L3();
-	}
+//	}
 	
 	//Включение необходимых элементов дисплея
 	display_battery();
 	display_N();
 	display_level(5);
 	
+	double I;
+	double V;
+	double P;
 	double Vrms;
 	double Irms;
 	double freq;
@@ -126,9 +129,9 @@ int main(void)
 //		display_main_numbers_double(test_result);
 //		HAL_Delay(500);
 //	}
-	
+
 	rs485_start();
-	//HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);
+	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN WHILE */
@@ -136,19 +139,153 @@ int main(void)
   {
 	  uint32_t time_start = uwTick;
 	  
+	  V = cs5490_get_V(&chip_L2);
+	  
+	  I = cs5490_get_I(&chip_L2);
+	  
+	  P = cs5490_get_P(&chip_L2);
+	  
+	  Vrms = cs5490_get_Vrms(&chip_L2);
+	  
+	  Irms = cs5490_get_Irms(&chip_L2);
+	  
+	  freq = cs5490_get_freq(&chip_L2);
+	  freq *= 4000;
+	  
+	  Pavg = cs5490_get_Pavg(&chip_L2);
+	  
+	  Qavg = cs5490_get_Qavg(&chip_L2);
+	  
+	  
+	  /*cs5490_reset(&chip_L1);
+	  chip_L1.cs5490_read_OK = READ_OPERATION_SUCCESS;
+	  cs5490_reset(&chip_L2);
+	  chip_L2.cs5490_read_OK = READ_OPERATION_SUCCESS;
+	  cs5490_reset(&chip_L3);
+	  chip_L3.cs5490_read_OK = READ_OPERATION_SUCCESS;
+	  
 	  //измерения
+	  printf("/------L1-------/\r\n");
+	  V = cs5490_get_V(&chip_L1);
+	  printf("V = %f\r\n", V);
+	  I = cs5490_get_I(&chip_L1);
+	  printf("I = %f\r\n", I);
+	  P = cs5490_get_P(&chip_L1);
+	  printf("P = %f\r\n", P);
+	  Vrms = cs5490_get_Vrms(&chip_L1);
+	  printf("Vrms = %f\r\n", Vrms);
+	  Irms = cs5490_get_Irms(&chip_L1);
+	  printf("Irms = %f\r\n", Irms);
+	  freq = cs5490_get_freq(&chip_L1);
+	  freq *= 4000;
+	  printf("F = %f\r\n", freq);
+	  Pavg = cs5490_get_Pavg(&chip_L1);
+	  printf("P = %f\r\n", Pavg);
+	  Qavg = cs5490_get_Qavg(&chip_L1);
+	  printf("Q = %f\r\n", Qavg);
+	  
+	  cs5490_full_callibration(&chip_L1);
+	  
+	  V = cs5490_get_V(&chip_L1);
+	  printf("V = %f\r\n", V);
+	  I = cs5490_get_I(&chip_L1);
+	  printf("I = %f\r\n", I);
+	  P = cs5490_get_P(&chip_L1);
+	  printf("P = %f\r\n", P);
+	  Vrms = cs5490_get_Vrms(&chip_L1);
+	  printf("Vrms = %f\r\n", Vrms);
+	  Irms = cs5490_get_Irms(&chip_L1);
+	  printf("Irms = %f\r\n", Irms);
+	  freq = cs5490_get_freq(&chip_L1);
+	  freq *= 4000;
+	  printf("F = %f\r\n", freq);
+	  Pavg = cs5490_get_Pavg(&chip_L1);
+	  printf("P = %f\r\n", Pavg);
+	  Qavg = cs5490_get_Qavg(&chip_L1);
+	  printf("Q = %f\r\n", Qavg);
+	  printf("/------L2-------/\r\n");
+	  V = cs5490_get_V(&chip_L2);
+	  printf("V = %f\r\n", V);
+	  I = cs5490_get_I(&chip_L2);
+	  printf("I = %f\r\n", I);
+	  P = cs5490_get_P(&chip_L2);
+	  printf("P = %f\r\n", P);
+	  Vrms = cs5490_get_Vrms(&chip_L2);
+	  printf("Vrms = %f\r\n", Vrms);
+	  Irms = cs5490_get_Irms(&chip_L2);
+	  printf("Irms = %f\r\n", Irms);
+	  freq = cs5490_get_freq(&chip_L2);
+	  freq *= 4000;
+	  printf("F = %f\r\n", freq);
+	  Pavg = cs5490_get_Pavg(&chip_L2);
+	  printf("P = %f\r\n", Pavg);
+	  Qavg = cs5490_get_Qavg(&chip_L2);
+	  printf("Q = %f\r\n", Qavg);
+	  
+	  cs5490_full_callibration(&chip_L2);
+	  
+	  V = cs5490_get_V(&chip_L2);
+	  printf("V = %f\r\n", V);
+	  I = cs5490_get_I(&chip_L2);
+	  printf("I = %f\r\n", I);
+	  P = cs5490_get_P(&chip_L2);
+	  printf("P = %f\r\n", P);
+	  Vrms = cs5490_get_Vrms(&chip_L2);
+	  printf("Vrms = %f\r\n", Vrms);
+	  Irms = cs5490_get_Irms(&chip_L2);
+	  printf("Irms = %f\r\n", Irms);
+	  freq = cs5490_get_freq(&chip_L2);
+	  freq *= 4000;
+	  printf("F = %f\r\n", freq);
+	  Pavg = cs5490_get_Pavg(&chip_L2);
+	  printf("P = %f\r\n", Pavg);
+	  Qavg = cs5490_get_Qavg(&chip_L2);
+	  printf("Q = %f\r\n", Qavg);
+	  printf("/------L3-------/\r\n");
+	  V = cs5490_get_V(&chip_L3);
+	  printf("V = %f\r\n", V);
+	  I = cs5490_get_I(&chip_L3);
+	  printf("I = %f\r\n", I);
+	  P = cs5490_get_P(&chip_L3);
+	  printf("P = %f\r\n", P);
 	  Vrms = cs5490_get_Vrms(&chip_L3);
+	  printf("Vrms = %f\r\n", Vrms);
 	  Irms = cs5490_get_Irms(&chip_L3);
+	  printf("Irms = %f\r\n", Irms);
 	  freq = cs5490_get_freq(&chip_L3);
 	  freq *= 4000;
+	  printf("F = %f\r\n", freq);
 	  Pavg = cs5490_get_Pavg(&chip_L3);
+	  printf("P = %f\r\n", Pavg);
 	  Qavg = cs5490_get_Qavg(&chip_L3);
+	  printf("Q = %f\r\n", Qavg);
 	  
-	  //накопление в РОНЭ и в тарифы
-	  mem_handler_set_data(&current_data, Pavg, Qavg, 0, 90, Irms, Vrms, freq);
-	  mem_handler_set_total_energy_register(&TER, &current_data);
-	 // tariffs_set_data(Pavg, Qavg);
+	  cs5490_full_callibration(&chip_L3);
 	  
+	  V = cs5490_get_V(&chip_L3);
+	  printf("V = %f\r\n", V);
+	  I = cs5490_get_I(&chip_L3);
+	  printf("I = %f\r\n", I);
+	  P = cs5490_get_P(&chip_L3);
+	  printf("P = %f\r\n", P);
+	  Vrms = cs5490_get_Vrms(&chip_L3);
+	  printf("Vrms = %f\r\n", Vrms);
+	  Irms = cs5490_get_Irms(&chip_L3);
+	  printf("Irms = %f\r\n", Irms);
+	  freq = cs5490_get_freq(&chip_L3);
+	  freq *= 4000;
+	  printf("F = %f\r\n", freq);
+	  Pavg = cs5490_get_Pavg(&chip_L3);
+	  printf("P = %f\r\n", Pavg);
+	  Qavg = cs5490_get_Qavg(&chip_L3);
+	  printf("Q = %f\r\n", Qavg);*/
+	  
+//	  
+//	  //накопление в РОНЭ и в тарифы
+	  mem_handler_set_data(&current_data, Pavg, Qavg, 0, 90, Irms, Vrms, freq, I, V, P);
+//	  mem_handler_set_total_energy_register(&TER, &current_data);
+//	 // tariffs_set_data(Pavg, Qavg);
+//	  
 	  //индикация
 	  //выводится только одно значение в 5 циклов
 	  //воеменная реализация 
@@ -156,18 +293,22 @@ int main(void)
 	  if ( cycle == 0 )
 	  {
 		  display_main_numbers_double(Vrms);
+		  
 		  display_V();
 	  } else if ( cycle == 25 ) 
 	  {
 		  display_main_numbers_double(freq);
+		  printf("%f\r\n", freq);
 		  display_Hz();
 	  } else if ( cycle == 50 ) 
 	  {
 		  display_main_numbers_double(Pavg);
+		  printf("%f\r\n", Pavg);
 		  display_W();
 		  display_active_consumed_energy();
 	  } else if ( cycle == 75 ){
 		  display_main_numbers_double(Irms);
+		  printf("%f\r\n", Irms);
 		  display_A();
 	  }
 	  
@@ -177,18 +318,19 @@ int main(void)
 		  cycle = 0;
 	  }
 	  
-	  //блок формирования ретроспективы РОН и тарифов
-	  uint8_t new_date = rtc_date_update(timestamp);
-	  
-	  if(new_date != 0)
-	  {
-		  mem_handler_send_retrospective_to_eeprom(new_date, timestamp, &TER);
-		  tariffs_send_retrospective_to_eeprom(new_date, timestamp);
-	  }
-	  
-	  //события
-	  
-	  uint32_t time_stop = uwTick;
+//	  
+//	  //блок формирования ретроспективы РОН и тарифов
+//	  uint8_t new_date = rtc_date_update(timestamp);
+//	  
+//	  if(new_date != 0)
+//	  {
+//		  mem_handler_send_retrospective_to_eeprom(new_date, timestamp, &TER);
+//		  tariffs_send_retrospective_to_eeprom(new_date, timestamp);
+//	  }
+//	  
+//	  //события
+//	  
+//	  uint32_t time_stop = uwTick;
 	  //printf("\r\nSrart:%d Stop:%d Diff:%d\r\n", time_start, time_stop, time_stop - time_start);
   /* USER CODE END WHILE */
 
