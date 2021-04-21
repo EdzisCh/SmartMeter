@@ -1,7 +1,6 @@
 #include "main.h"
 #include "stm32l4xx_hal.h"
-
-/* USER CODE BEGIN Includes */
+// /* USER CODE BEGIN Includes */
 #include "lcd.h"
 #include "RTC.h"
 #include "CS5490.h"
@@ -13,17 +12,15 @@
 //#include "S25FL.h"
 #include "Tests.h"
 #include "tariffs.h"
+#include "pass_handler.h"
 /* USER CODE END Includes */
 
+ADC_HandleTypeDef hadc1;
 I2C_HandleTypeDef hi2c2;
 I2C_HandleTypeDef hi2c3;
-
 QSPI_HandleTypeDef hqspi;
-
 RTC_HandleTypeDef hrtc;
-
 TIM_HandleTypeDef htim5;
-
 UART_HandleTypeDef huart5;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
@@ -31,9 +28,22 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 extern __IO uint32_t uwTick;
-uint8_t cycle;
-data current_data;
+
+uint8_t group_number;
+uint8_t main_display_cycle;
+
+data current_data_3;
+data current_data_1;
+data current_data_2;
 total_energy_register TER;
+
+CS5490 chip_L1;
+CS5490 chip_L2;
+CS5490 chip_L3;
+
+uint8_t phase_1_enable = 0;
+uint8_t phase_2_enable = 0;
+uint8_t phase_3_enable = 0;
 /* USER CODE END PV */
 
 void SystemClock_Config(void);
@@ -47,77 +57,100 @@ static void MX_RTC_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USART3_UART_Init(void);
+static void MX_ADC1_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+void main_display_data_on_LCD(data *data, uint8_t group_number, uint8_t cycle);
   
 int main(void)
 {
 	HAL_Init();
 	SystemClock_Config();
-	
+		
+    MX_RTC_Init();
 	MX_GPIO_Init();
 	MX_I2C2_Init();
 	MX_UART5_Init();
 	MX_USART1_UART_Init();
 	MX_I2C3_Init();
 	MX_QUADSPI_Init();
-	MX_RTC_Init();
 	MX_TIM5_Init();
 	MX_USART2_UART_Init();
 	MX_USART3_UART_Init();
+	MX_ADC1_Init();
 	
   /* USER CODE BEGIN 2 */
 
 	printf("--START--\r\n");
+                
 	HAL_GPIO_WritePin(LED_BL_GPIO_Port, LED_BL_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(LED_ACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(LED_REACT_GPIO_Port, LED_REACT_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
 	
-	cycle = 0;
-
+	main_display_cycle = 0;
+	group_number = 1;
+	
+	pass_handler_passwords_init();
+	mem_handler_get_current_address_from_eeprom();
 	display_init();
-
 	display_clear();
-	
-	rtc_set_init_dateTime();
 	tariffs_init();
-
-	CS5490 chip_L1;
+	event_handler_init_logs();
+	rs485_start();
+	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);
+	
 	chip_L1.cs5490_huart = &huart1;
-	CS5490 chip_L2;
 	chip_L2.cs5490_huart = &huart2;
-	CS5490 chip_L3;
 	chip_L3.cs5490_huart = &huart3;
-	
-	cs5490_full_callibration(&chip_L2);
-
-//	if(!cs5490_init(&chip_L1))
-//	{
+        
+    uint8_t init = cs5490_init(&chip_L1, &chip_L2, &chip_L3);
+	if(init == 0)
+	{
 		display_L1();
-//	}
-//	if(!cs5490_init(&chip_L2))
-//	{
 		display_L2();
-//	}
-//	if(cs5490_init(&chip_L3) == 0)
-//	{
 		display_L3();
-//	}
+		phase_1_enable = 1;
+		phase_2_enable = 1;
+		phase_3_enable = 1;
+	} else if(init == 2)
+	{
+		display_L1();
+		phase_1_enable = 1;
+	} else if(init == 3)
+	{
+		display_L1();
+		display_L2();
+		phase_1_enable = 1;
+		phase_2_enable = 1;
+	} 
 	
-	//Включение необходимых элементов дисплея
-	display_battery();
-	display_N();
 	display_level(5);
+	display_GR();
+	display_PR();
+	display_T();
 	
-	double I;
-	double V;
-	double P;
-	double Vrms;
-	double Irms;
-	double freq;
-	double Pavg;
-	double Qavg;
+	double Vrms_1 = 0;
+	double Vrms_2 = 0;
+	double Vrms_3 = 0;
+	double Irms_1 = 0;
+	double Irms_2 = 0;
+	double Irms_3 = 0;
+	double freq_1 = 0;
+	double freq_2 = 0;
+	double freq_3 = 0;
+	double Pavg_1 = 0;
+	double Pavg_2 = 0;
+	double Pavg_3 = 0;
+	double Qavg_1 = 0;
+	double Qavg_2 = 0;
+	double Qavg_3 = 0;
+	double Savg_1 = 0;
+	double Savg_2 = 0;
+	double Savg_3 = 0;
+	double PF_1 = 0;
+	double PF_2 = 0;
+	double PF_3 = 0;
 
 	uint32_t timestamp[2];
 	rtc_get_timestamp(timestamp);
@@ -129,212 +162,150 @@ int main(void)
 //		display_main_numbers_double(test_result);
 //		HAL_Delay(500);
 //	}
-
-	rs485_start();
-	HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);
+	
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  uint32_t time_start = uwTick;
+		int32_t time_start = uwTick;
+		
+		Vrms_1 = cs5490_get_Vrms(&chip_L1);
+		freq_1 = cs5490_get_freq(&chip_L1);
+		Pavg_1 = cs5490_get_Pavg(&chip_L1);
+		Irms_1 = cs5490_get_Irms(&chip_L1);
+		Qavg_1 = cs5490_get_Qavg(&chip_L1);
+		Savg_1 = cs5490_get_Savg(&chip_L1);
+		PF_1 = cs5490_get_PF(&chip_L1);
+			
+		Vrms_2 = cs5490_get_Vrms(&chip_L2);
+		freq_2 = cs5490_get_freq(&chip_L2);
+		Pavg_2 = cs5490_get_Pavg(&chip_L2);
+		Irms_2 = cs5490_get_Irms(&chip_L2);
+		Qavg_2 = cs5490_get_Qavg(&chip_L2);
+		Savg_2 = cs5490_get_Savg(&chip_L2);
+		PF_2 = cs5490_get_PF(&chip_L2);
+		
+		Vrms_3 = cs5490_get_Vrms(&chip_L3);
+		freq_3 = cs5490_get_freq(&chip_L3);
+		Pavg_3 = cs5490_get_Pavg(&chip_L3);
+		Irms_3 = cs5490_get_Irms(&chip_L3);
+		Qavg_3 = cs5490_get_Qavg(&chip_L3);
+		Savg_3 = cs5490_get_Savg(&chip_L3);
+		PF_3 = cs5490_get_PF(&chip_L3);
+		
+		//накопление в РОНЭ и в тарифы
+		mem_handler_set_I(&current_data_1, Irms_1);
+		mem_handler_set_U(&current_data_1, Vrms_1);
+		mem_handler_set_F(&current_data_1, freq_1);
+		mem_handler_set_PF(&current_data_1, PF_1);
+		mem_handler_set_P(&current_data_1, Pavg_1);
+		mem_handler_set_Q(&current_data_1, Qavg_1);
+		mem_handler_set_S(&current_data_1, Savg_1);
+		
+		mem_handler_set_I(&current_data_2, Irms_2);
+		mem_handler_set_U(&current_data_2, Vrms_2);
+		mem_handler_set_F(&current_data_2, freq_2);
+		mem_handler_set_PF(&current_data_2, PF_2);
+		mem_handler_set_P(&current_data_2, Pavg_2);
+		mem_handler_set_Q(&current_data_2, Qavg_2);
+		mem_handler_set_S(&current_data_2, Savg_2);
+		
+		mem_handler_set_I(&current_data_3, Irms_3);
+		mem_handler_set_U(&current_data_3, Vrms_3);
+		mem_handler_set_F(&current_data_3, freq_3);
+		mem_handler_set_PF(&current_data_3, PF_3);
+		mem_handler_set_P(&current_data_3, Pavg_3);
+		mem_handler_set_Q(&current_data_3, Qavg_3);
+		mem_handler_set_S(&current_data_3, Savg_3);
+		
+		mem_handler_set_total_energy_register(&TER, &current_data_1);
+		mem_handler_set_total_energy_register(&TER, &current_data_2);
+		mem_handler_set_total_energy_register(&TER, &current_data_3);
+		
+		tariffs_set_data(Pavg_1, Qavg_1);
+		tariffs_set_data(Pavg_2, Qavg_2);
+		tariffs_set_data(Pavg_3, Qavg_3);
+		
+		if(group_number == 1 && phase_1_enable)
+		{
+			main_display_data_on_LCD(&current_data_1, group_number, main_display_cycle);
+		} else if (group_number == 2 && phase_2_enable)
+		{
+			main_display_data_on_LCD(&current_data_2, group_number, main_display_cycle);
+		} else if (group_number == 3 && phase_3_enable)
+		{
+			main_display_data_on_LCD(&current_data_3, group_number, main_display_cycle);
+		}
 	  
-	  V = cs5490_get_V(&chip_L2);
+		//блок формирования ретроспективы РОН и тарифов
+		uint8_t new_date = rtc_date_update(timestamp);
+
+		if(new_date != 0)
+		{
+			mem_handler_send_retrospective_to_eeprom(new_date, timestamp, &TER);
+			tariffs_send_retrospective_to_eeprom(new_date, timestamp);
+		}
+		
+		tariffs_update_plan(0, 0);
 	  
-	  I = cs5490_get_I(&chip_L2);
-	  
-	  P = cs5490_get_P(&chip_L2);
-	  
-	  Vrms = cs5490_get_Vrms(&chip_L2);
-	  
-	  Irms = cs5490_get_Irms(&chip_L2);
-	  
-	  freq = cs5490_get_freq(&chip_L2);
-	  freq *= 4000;
-	  
-	  Pavg = cs5490_get_Pavg(&chip_L2);
-	  
-	  Qavg = cs5490_get_Qavg(&chip_L2);
-	  
-	  
-	  /*cs5490_reset(&chip_L1);
-	  chip_L1.cs5490_read_OK = READ_OPERATION_SUCCESS;
-	  cs5490_reset(&chip_L2);
-	  chip_L2.cs5490_read_OK = READ_OPERATION_SUCCESS;
-	  cs5490_reset(&chip_L3);
-	  chip_L3.cs5490_read_OK = READ_OPERATION_SUCCESS;
-	  
-	  //измерения
-	  printf("/------L1-------/\r\n");
-	  V = cs5490_get_V(&chip_L1);
-	  printf("V = %f\r\n", V);
-	  I = cs5490_get_I(&chip_L1);
-	  printf("I = %f\r\n", I);
-	  P = cs5490_get_P(&chip_L1);
-	  printf("P = %f\r\n", P);
-	  Vrms = cs5490_get_Vrms(&chip_L1);
-	  printf("Vrms = %f\r\n", Vrms);
-	  Irms = cs5490_get_Irms(&chip_L1);
-	  printf("Irms = %f\r\n", Irms);
-	  freq = cs5490_get_freq(&chip_L1);
-	  freq *= 4000;
-	  printf("F = %f\r\n", freq);
-	  Pavg = cs5490_get_Pavg(&chip_L1);
-	  printf("P = %f\r\n", Pavg);
-	  Qavg = cs5490_get_Qavg(&chip_L1);
-	  printf("Q = %f\r\n", Qavg);
-	  
-	  cs5490_full_callibration(&chip_L1);
-	  
-	  V = cs5490_get_V(&chip_L1);
-	  printf("V = %f\r\n", V);
-	  I = cs5490_get_I(&chip_L1);
-	  printf("I = %f\r\n", I);
-	  P = cs5490_get_P(&chip_L1);
-	  printf("P = %f\r\n", P);
-	  Vrms = cs5490_get_Vrms(&chip_L1);
-	  printf("Vrms = %f\r\n", Vrms);
-	  Irms = cs5490_get_Irms(&chip_L1);
-	  printf("Irms = %f\r\n", Irms);
-	  freq = cs5490_get_freq(&chip_L1);
-	  freq *= 4000;
-	  printf("F = %f\r\n", freq);
-	  Pavg = cs5490_get_Pavg(&chip_L1);
-	  printf("P = %f\r\n", Pavg);
-	  Qavg = cs5490_get_Qavg(&chip_L1);
-	  printf("Q = %f\r\n", Qavg);
-	  printf("/------L2-------/\r\n");
-	  V = cs5490_get_V(&chip_L2);
-	  printf("V = %f\r\n", V);
-	  I = cs5490_get_I(&chip_L2);
-	  printf("I = %f\r\n", I);
-	  P = cs5490_get_P(&chip_L2);
-	  printf("P = %f\r\n", P);
-	  Vrms = cs5490_get_Vrms(&chip_L2);
-	  printf("Vrms = %f\r\n", Vrms);
-	  Irms = cs5490_get_Irms(&chip_L2);
-	  printf("Irms = %f\r\n", Irms);
-	  freq = cs5490_get_freq(&chip_L2);
-	  freq *= 4000;
-	  printf("F = %f\r\n", freq);
-	  Pavg = cs5490_get_Pavg(&chip_L2);
-	  printf("P = %f\r\n", Pavg);
-	  Qavg = cs5490_get_Qavg(&chip_L2);
-	  printf("Q = %f\r\n", Qavg);
-	  
-	  cs5490_full_callibration(&chip_L2);
-	  
-	  V = cs5490_get_V(&chip_L2);
-	  printf("V = %f\r\n", V);
-	  I = cs5490_get_I(&chip_L2);
-	  printf("I = %f\r\n", I);
-	  P = cs5490_get_P(&chip_L2);
-	  printf("P = %f\r\n", P);
-	  Vrms = cs5490_get_Vrms(&chip_L2);
-	  printf("Vrms = %f\r\n", Vrms);
-	  Irms = cs5490_get_Irms(&chip_L2);
-	  printf("Irms = %f\r\n", Irms);
-	  freq = cs5490_get_freq(&chip_L2);
-	  freq *= 4000;
-	  printf("F = %f\r\n", freq);
-	  Pavg = cs5490_get_Pavg(&chip_L2);
-	  printf("P = %f\r\n", Pavg);
-	  Qavg = cs5490_get_Qavg(&chip_L2);
-	  printf("Q = %f\r\n", Qavg);
-	  printf("/------L3-------/\r\n");
-	  V = cs5490_get_V(&chip_L3);
-	  printf("V = %f\r\n", V);
-	  I = cs5490_get_I(&chip_L3);
-	  printf("I = %f\r\n", I);
-	  P = cs5490_get_P(&chip_L3);
-	  printf("P = %f\r\n", P);
-	  Vrms = cs5490_get_Vrms(&chip_L3);
-	  printf("Vrms = %f\r\n", Vrms);
-	  Irms = cs5490_get_Irms(&chip_L3);
-	  printf("Irms = %f\r\n", Irms);
-	  freq = cs5490_get_freq(&chip_L3);
-	  freq *= 4000;
-	  printf("F = %f\r\n", freq);
-	  Pavg = cs5490_get_Pavg(&chip_L3);
-	  printf("P = %f\r\n", Pavg);
-	  Qavg = cs5490_get_Qavg(&chip_L3);
-	  printf("Q = %f\r\n", Qavg);
-	  
-	  cs5490_full_callibration(&chip_L3);
-	  
-	  V = cs5490_get_V(&chip_L3);
-	  printf("V = %f\r\n", V);
-	  I = cs5490_get_I(&chip_L3);
-	  printf("I = %f\r\n", I);
-	  P = cs5490_get_P(&chip_L3);
-	  printf("P = %f\r\n", P);
-	  Vrms = cs5490_get_Vrms(&chip_L3);
-	  printf("Vrms = %f\r\n", Vrms);
-	  Irms = cs5490_get_Irms(&chip_L3);
-	  printf("Irms = %f\r\n", Irms);
-	  freq = cs5490_get_freq(&chip_L3);
-	  freq *= 4000;
-	  printf("F = %f\r\n", freq);
-	  Pavg = cs5490_get_Pavg(&chip_L3);
-	  printf("P = %f\r\n", Pavg);
-	  Qavg = cs5490_get_Qavg(&chip_L3);
-	  printf("Q = %f\r\n", Qavg);*/
-	  
-//	  
-//	  //накопление в РОНЭ и в тарифы
-	  mem_handler_set_data(&current_data, Pavg, Qavg, 0, 90, Irms, Vrms, freq, I, V, P);
-//	  mem_handler_set_total_energy_register(&TER, &current_data);
-//	 // tariffs_set_data(Pavg, Qavg);
-//	  
-	  //индикация
-	  //выводится только одно значение в 5 циклов
-	  //воеменная реализация 
-	  display_energy_clear();
-	  if ( cycle == 0 )
-	  {
-		  display_main_numbers_double(Vrms);
-		  
-		  display_V();
-	  } else if ( cycle == 25 ) 
-	  {
-		  display_main_numbers_double(freq);
-		  printf("%f\r\n", freq);
-		  display_Hz();
-	  } else if ( cycle == 50 ) 
-	  {
-		  display_main_numbers_double(Pavg);
-		  printf("%f\r\n", Pavg);
-		  display_W();
-		  display_active_consumed_energy();
-	  } else if ( cycle == 75 ){
-		  display_main_numbers_double(Irms);
-		  printf("%f\r\n", Irms);
-		  display_A();
-	  }
-	  
-	  cycle++;
-	  if(cycle == 100)
-	  {
-		  cycle = 0;
-	  }
-	  
-//	  
-//	  //блок формирования ретроспективы РОН и тарифов
-//	  uint8_t new_date = rtc_date_update(timestamp);
-//	  
-//	  if(new_date != 0)
-//	  {
-//		  mem_handler_send_retrospective_to_eeprom(new_date, timestamp, &TER);
-//		  tariffs_send_retrospective_to_eeprom(new_date, timestamp);
-//	  }
-//	  
-//	  //события
-//	  
-//	  uint32_t time_stop = uwTick;
-	  //printf("\r\nSrart:%d Stop:%d Diff:%d\r\n", time_start, time_stop, time_stop - time_start);
+		main_display_cycle++;
+		if(main_display_cycle >= 7)
+		{
+			main_display_cycle = 0;
+			group_number++;
+		}
+		if(group_number > 3)
+		{
+			group_number = 1;
+		}
+		
+	    uint32_t delay = uwTick - time_start;
+		uint32_t stop = uwTick;
+		while(delay < 1000)
+		{
+			delay = uwTick - time_start;
+		}
+		//printf("Srart:%d Stop:%d Diff:%d Stop:%d\r\n", time_start, uwTick, delay, stop);
   /* USER CODE END WHILE */
 
   }
+
+}
+
+void main_display_data_on_LCD(data *data, uint8_t group_number, uint8_t cycle)
+{
+	display_write_group_number(group_number);
+	
+	if ( cycle == 0 )
+	{
+		display_main_numbers_double(data->U);
+		display_V();
+	} else if ( cycle == 1 ) 
+	{
+		display_main_numbers_double(data->F);
+		display_Hz();
+	} else if ( cycle == 2 ) 
+	{
+		display_main_numbers_double(data->P);
+		display_W();
+	} else if ( cycle == 3 )
+	{
+		display_main_numbers_double(data->I);
+		display_A();
+	} else if( cycle == 4 )
+	{
+		display_main_numbers_double(data->Q);
+		display_VAr();
+	} else if( cycle == 5)
+	{
+		display_main_numbers_double(data->S);
+		display_VA();
+	} else if( cycle == 6)
+	{
+		display_clear_units();
+		display_main_numbers_double(data->PF);
+	}
 
 }
 
@@ -385,7 +356,7 @@ void SystemClock_Config(void)
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_USART1
                               |RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_USART3
                               |RCC_PERIPHCLK_UART5|RCC_PERIPHCLK_I2C2
-                              |RCC_PERIPHCLK_I2C3;
+                              |RCC_PERIPHCLK_I2C3|RCC_PERIPHCLK_ADC;
   PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
   PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
   PeriphClkInit.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
@@ -393,6 +364,14 @@ void SystemClock_Config(void)
   PeriphClkInit.I2c2ClockSelection = RCC_I2C2CLKSOURCE_PCLK1;
   PeriphClkInit.I2c3ClockSelection = RCC_I2C3CLKSOURCE_PCLK1;
   PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+  PeriphClkInit.AdcClockSelection = RCC_ADCCLKSOURCE_PLLSAI1;
+  PeriphClkInit.PLLSAI1.PLLSAI1Source = RCC_PLLSOURCE_HSE;
+  PeriphClkInit.PLLSAI1.PLLSAI1M = 4;
+  PeriphClkInit.PLLSAI1.PLLSAI1N = 8;
+  PeriphClkInit.PLLSAI1.PLLSAI1P = RCC_PLLP_DIV7;
+  PeriphClkInit.PLLSAI1.PLLSAI1Q = RCC_PLLQ_DIV2;
+  PeriphClkInit.PLLSAI1.PLLSAI1R = RCC_PLLR_DIV2;
+  PeriphClkInit.PLLSAI1.PLLSAI1ClockOut = RCC_PLLSAI1_ADC1CLK;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
@@ -415,6 +394,58 @@ void SystemClock_Config(void)
 
   /* SysTick_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+}
+
+/* ADC1 init function */
+static void MX_ADC1_Init(void)
+{
+
+  ADC_MultiModeTypeDef multimode;
+  ADC_ChannelConfTypeDef sConfig;
+
+    /**Common config 
+    */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc1.Init.LowPowerAutoWait = DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  hadc1.Init.OversamplingMode = DISABLE;
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+    /**Configure the ADC multi-mode 
+    */
+  multimode.Mode = ADC_MODE_INDEPENDENT;
+  if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+    /**Configure Regular Channel 
+    */
+  sConfig.Channel = ADC_CHANNEL_VBAT;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
 }
 
 /* I2C2 init function */
@@ -507,11 +538,6 @@ static void MX_QUADSPI_Init(void)
 /* RTC init function */
 static void MX_RTC_Init(void)
 {
-	
-  RTC_TimeTypeDef sTime;
-  RTC_DateTypeDef sDate;
-	
-
     /**Initialize RTC Only 
     */
   hrtc.Instance = RTC;
@@ -522,33 +548,18 @@ static void MX_RTC_Init(void)
   hrtc.Init.OutPutRemap = RTC_OUTPUT_REMAP_NONE;
   hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
   hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
+ 
   if (HAL_RTC_Init(&hrtc) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
 
-    /**Initialize RTC and set the Time and Date 
-    */
-  sTime.Hours = 0x0;
-  sTime.Minutes = 0x0;
-  sTime.Seconds = 0x0;
-  sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-  sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
+  
+  if (HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1) != 0x32F2)
   {
-    _Error_Handler(__FILE__, __LINE__);
+   rtc_set_init_dateTime();
+   HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, 0x32F2);
   }
-
-  sDate.WeekDay = RTC_WEEKDAY_MONDAY;
-  sDate.Month = RTC_MONTH_JANUARY;
-  sDate.Date = 0x1;
-  sDate.Year = 0x0;
-
-  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
 }
 
 /* TIM5 init function */

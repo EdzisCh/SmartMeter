@@ -4,16 +4,28 @@ tariffs_accum tariffs_accums;
 
 //Расписание
 shedule_item shedule[48];
-//Тарифная програма, номер програмы = индекс
+//Тарифная программа, номер програмы = индекс
 daily_program daily_programs[32];
+//Месячная программа, номер месяца = индекс
 month_program month_programs[12];
 
+//Тарфные планы
 tariff_plan first_plan;
 tariff_plan second_plan;
 
+//Указатель на текущий (рабочий) тарифный план
 tariff_plan* current_plan;
-uint32_t *current_accum_for_P;
-uint32_t *current_accum_for_Q;
+
+double *current_accum_for_P;
+double *current_accum_for_Q;
+
+uint32_t current_address_of_tariffs_day_retrosective;
+uint32_t current_address_of_tariffs_month_retrosective;
+uint32_t current_address_of_tariffs_year_retrosective;
+
+uint32_t count_of_daily_notes;
+uint32_t count_of_month_notes;
+uint32_t count_of_year_notes;
 
 /*
 ! Инициализация первоначальная 
@@ -44,6 +56,7 @@ void tariffs_init( void )
 	uint32_t first_plan_start_time = rtc_get_date();
 	
 	first_plan.updating_flag = 0;
+	first_plan.plan_numer = 1;
 	first_plan.tarrif_program = month_programs;
 	first_plan.date_of_application = first_plan_start_time;
 	first_plan.count_of_exeptional_days = tariffs_get_count_of_exeptional_days(&first_plan);
@@ -52,10 +65,15 @@ void tariffs_init( void )
 	
 	//TODO
 	second_plan.updating_flag = 1;
+	first_plan.plan_numer = 2;
 	second_plan.tarrif_program = month_programs;
 	second_plan.date_of_application = 0;
 	second_plan.count_of_exeptional_days = tariffs_get_count_of_exeptional_days(&second_plan);
 	//second_plan.checksum = tariffs_calculate_checksum(&second_plan);
+	
+	m24m01_get_from_mem(MEM_ADDRESS_TARIFFS_CURRENT_ADDRESS_OF_DAY_RERTOSPEC, (uint8_t*)&current_address_of_tariffs_day_retrosective, 4);
+	m24m01_get_from_mem(MEM_ADDRESS_TARIFFS_CURRENT_ADDRESS_OF_MONTH_RERTOSPEC, (uint8_t*)&current_address_of_tariffs_month_retrosective, 4);
+	m24m01_get_from_mem(MEM_ADDRESS_TARIFFS_CURRENT_ADDRESS_OF_YEAR_RERTOSPEC, (uint8_t*)&current_address_of_tariffs_year_retrosective, 4);
 }
 
 /*
@@ -111,7 +129,8 @@ void tariffs_make_basic_schedule( void )
 
 /*
 !Базовая дневная программа. Каждому дню месяца назначается программа, описанная 
-в функции tariffs_make_basic_schedule(). //TODO Также ставиться один исключительный день 
+в функции tariffs_make_basic_schedule(). 
+//TODO Также ставиться один исключительный день 
 */
 void tariffs_make_basic_daily_programs( void )
 {
@@ -155,7 +174,7 @@ void tariffs_make_basic_month_programs( void )
 }
 
 /*
-!Подсчет количесва исключтельных дней в данном арфном плане
+!Подсчет количесва исключтельных дней в данном тарфном плане
 */
 uint16_t tariffs_get_count_of_exeptional_days( tariff_plan* plan )
 {
@@ -175,7 +194,7 @@ uint16_t tariffs_get_count_of_exeptional_days( tariff_plan* plan )
 !Накопление измеренной энергии. Последоваельный поиск по дате
 //TODO начинать с метки 
 */
-void tariffs_set_data( uint32_t P, uint32_t Q )
+void tariffs_set_data( double P, double Q )
 {
 	tariffs_get_current_tariff();
 	
@@ -201,8 +220,8 @@ void tariffs_get_current_tariff( void )
 	//Если беда со значениями - общий накопитель
 	if(month > 12 || day > 31 || month == 0 || day == 0)
 	{
-		current_accum_for_P = &tariffs_accums.t_10;
-		current_accum_for_Q = &tariffs_accums.t_11;
+		current_accum_for_P = &(tariffs_accums.t_10);
+		current_accum_for_Q = &(tariffs_accums.t_11);
 		return;
 	}
 	
@@ -240,56 +259,82 @@ void tariffs_get_current_tariff( void )
 */
 void tariffs_send_retrospective_to_eeprom( uint8_t date, uint32_t *timestamp )
 {
-	uint32_t data_to_mem[16];
-	data_to_mem[0] = timestamp[0];
-	data_to_mem[1] = timestamp[1];
-	data_to_mem[2] = tariffs_accums.t_1_a;
-	data_to_mem[3] = tariffs_accums.t_1_r;
-	data_to_mem[4] = tariffs_accums.t_2_a;
-	data_to_mem[5] = tariffs_accums.t_2_r;
-	data_to_mem[6] = tariffs_accums.t_3_a;
-	data_to_mem[7] = tariffs_accums.t_3_r;
-	data_to_mem[8] = tariffs_accums.t_4_a;
-	data_to_mem[9] = tariffs_accums.t_4_r;
-	data_to_mem[10] = tariffs_accums.t_5_a;
-	data_to_mem[11] = tariffs_accums.t_6_a;
-	data_to_mem[12] = tariffs_accums.t_7_a;
-	data_to_mem[13] = tariffs_accums.t_8_a;
-	data_to_mem[14] = tariffs_accums.t_10;
-	data_to_mem[15] = tariffs_accums.t_11;
+	uint32_t timestamp_to_mem[2];
+	timestamp_to_mem[0] = timestamp[0];
+	timestamp_to_mem[1] = timestamp[1];
+	double data_to_mem[14];
+	data_to_mem[0] = tariffs_accums.t_1_a;
+	data_to_mem[1] = tariffs_accums.t_1_r;
+	data_to_mem[2] = tariffs_accums.t_2_a;
+	data_to_mem[3] = tariffs_accums.t_2_r;
+	data_to_mem[4] = tariffs_accums.t_3_a;
+	data_to_mem[5] = tariffs_accums.t_3_r;
+	data_to_mem[6] = tariffs_accums.t_4_a;
+	data_to_mem[7] = tariffs_accums.t_4_r;
+	data_to_mem[8] = tariffs_accums.t_5_a;
+	data_to_mem[9] = tariffs_accums.t_6_a;
+	data_to_mem[10] = tariffs_accums.t_7_a;
+	data_to_mem[11] = tariffs_accums.t_8_a;
+	data_to_mem[12] = tariffs_accums.t_10;
+	data_to_mem[13] = tariffs_accums.t_11;
 	
 	if(date == 1)
 	{
-		m24m01_save_to_mem(current_address_of_tariffs_day_retrosective, (uint8_t *) data_to_mem, 64);
-		current_address_of_tariffs_day_retrosective += 64;
+		m24m01_save_to_mem(current_address_of_tariffs_day_retrosective, (uint8_t *) timestamp_to_mem, 8);
+		m24m01_save_to_mem(current_address_of_tariffs_day_retrosective + 8, (uint8_t *) data_to_mem, 112);
+		current_address_of_tariffs_day_retrosective += 120;
 		if(current_address_of_tariffs_day_retrosective >= MEM_MAX_ADDRESS_OF_TARIFFS_DAY_RETROSPEC)
-			current_address_of_tariffs_day_retrosective = 0x10F8;
+			current_address_of_tariffs_day_retrosective = MEM_INIT_ADDRESS_OF_TARIFFS_DAY_RETROSPEC;
 	} else if (date == 2)
 	{
-		m24m01_save_to_mem(current_address_of_tariffs_month_retrosective, (uint8_t *) data_to_mem, 64);
-		current_address_of_tariffs_month_retrosective += 64;
+		m24m01_save_to_mem(current_address_of_tariffs_month_retrosective, (uint8_t *) timestamp_to_mem, 8);
+		m24m01_save_to_mem(current_address_of_tariffs_month_retrosective + 8, (uint8_t *) data_to_mem, 112);
+		current_address_of_tariffs_month_retrosective += 120;
 		if(current_address_of_tariffs_month_retrosective >= MEM_MAX_ADDRESS_OF_TARIFFS_MONTH_RETROSPEC)
-			current_address_of_tariffs_month_retrosective = 0x3178;
+			current_address_of_tariffs_month_retrosective = MEM_INIT_ADDRESS_OF_TARIFFS_MONTH_RETROSPEC;
 	} else if (date == 3)
 	{
-		m24m01_save_to_mem(current_address_of_tariffs_year_retrosective, (uint8_t *) data_to_mem, 64);
-		current_address_of_tariffs_year_retrosective += 64;
+		m24m01_save_to_mem(current_address_of_tariffs_year_retrosective, (uint8_t *) timestamp_to_mem, 8);
+		m24m01_save_to_mem(current_address_of_tariffs_year_retrosective + 8, (uint8_t *) data_to_mem, 112);
+		current_address_of_tariffs_year_retrosective += 120;
 		if(current_address_of_tariffs_year_retrosective >= MEM_MAX_ADDRESS_OF_TARIFFS_YEAR_RETROSPEC)
-			current_address_of_tariffs_year_retrosective = 0x3B78;
+			current_address_of_tariffs_year_retrosective = MEM_INIT_ADDRESS_OF_TARIFFS_YEAR_RETROSPEC;
 	}
 }
 
 /*
-!
+! Обновление тарифов
 */
-void tariffs_update_plan( void )
+void tariffs_update_plan( uint8_t event, uint8_t command )
 {
-	if(HAL_RTC_GetState(&hrtc) == HAL_OK)
+	uint32_t timestamp[2];
+	rtc_get_timestamp(timestamp);
+	
+	if(event == 0)
 	{
-		
+		if( command == 1)
+		{
+			
+		} else {
+			if( HAL_RTC_GetState(&hrtc) != HAL_OK )
+			{
+				current_accum_for_P = &tariffs_accums.t_10;
+				current_accum_for_Q = &tariffs_accums.t_11;
+			}  else {
+				tariffs_get_current_tariff();
+				
+				info_field info;
+				info.sign = 0;
+				event_handler_make_note(EVENT_SHEDULES_WORKING_GROUP_CHANGING, info);
+			}
+		}
 	} else {
-		
+		current_accum_for_P = &tariffs_accums.t_10;
+		current_accum_for_Q = &tariffs_accums.t_11;
+		display_tariff_number_clear();
 	}
+	
+	display_tariff_number(current_plan->plan_numer);
 }
 
 /*

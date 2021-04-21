@@ -249,11 +249,11 @@ uint8_t tests_retrospective_last_address( void )
 	notes_to_mem[4] = TER.released_active_energy;
 	notes_to_mem[5] = TER.released_reactive_energy; 
 	
-	while(current_address_of_day_retrosective != 0x0048)
-	{
-		mem_handler_send_retrospective_to_eeprom(1, timestamp, &TER);
-	}
-	mem_handler_send_retrospective_to_eeprom(1, timestamp, &TER);
+	// while(current_address_of_day_retrosective != 0x0048)
+	// {
+		// mem_handler_send_retrospective_to_eeprom(1, timestamp, &TER);
+	// }
+	// mem_handler_send_retrospective_to_eeprom(1, timestamp, &TER);
 	
 	m24m01_get_from_mem(0x48, (uint8_t *) notes_from_mem, 24);
 	for(uint8_t i = 0; i < 6; i++)
@@ -284,7 +284,6 @@ uint8_t tests_day_tariffs_retrospective( void )
 	uint32_t P = 1;
 	uint32_t Q = 5;
 	
-	uint8_t notes_to_mem_addr = 0;
 	rtc_set_day(0x05);
 	for(uint8_t i = 0; i < 4; i++)
 	{

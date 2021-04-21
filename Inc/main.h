@@ -1,5 +1,14 @@
+/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __MAIN_H__
 #define __MAIN_H__
+
+/* Includes ------------------------------------------------------------------*/
+
+/* USER CODE BEGIN Includes */
+
+/* USER CODE END Includes */
+
+/* Private define ------------------------------------------------------------*/
 
 #define KEY_3_Pin GPIO_PIN_5
 #define KEY_3_GPIO_Port GPIOE
@@ -66,6 +75,10 @@
 #define LED_BL_Pin GPIO_PIN_1
 #define LED_BL_GPIO_Port GPIOE
 
+/* USER CODE BEGIN Private defines */
+
+/* USER CODE END Private defines */
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -76,4 +89,4 @@ void _Error_Handler(char *, int);
 }
 #endif
 
-#endif
+#endif /* __MAIN_H__ */

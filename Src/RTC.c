@@ -1,8 +1,5 @@
 #include "RTC.h"
 
-//RTC_TimeTypeDef current_time;
-//RTC_DateTypeDef current_date;
-
 /**
 !Установка первоночальной даты 
 */
@@ -101,6 +98,80 @@ uint8_t rtc_date_update( uint32_t *timestamp )
 	}
 	
 	return 0;
+}
+
+/*
+!
+*/
+uint8_t rtc_enable_daylight_saving( uint8_t enable )
+{
+	if(enable != 1 && enable != 0)
+	{
+		return 0x03;
+	}
+	
+	RTC_TimeTypeDef current_time;
+	
+	if(HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x01;
+	}
+	
+	info_field info;
+	if(enable)
+	{
+		current_time.DayLightSaving = RTC_DAYLIGHTSAVING_ADD1H;
+		info.sign = EVENT_INFO_SIGN_DAYLIGHT_ON;
+	} else {
+		current_time.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;	
+		info.sign = EVENT_INFO_SIGN_DAYLIGHT_OFF;
+	}
+	
+	if(HAL_RTC_SetTime(&hrtc, &current_time, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x02;
+	}
+	
+	event_handler_make_note(EVENT_DAYLIGHT_SAVING_TIME, info);
+	
+	return 0x00;
+}
+
+/*
+!
+*/
+uint8_t rtc_change_mode_daylight_saving( uint8_t mode )
+{
+	if(mode != 1 && mode != 2)
+	{
+		return 0x03;
+	}
+	
+	RTC_TimeTypeDef current_time;
+	
+	if(HAL_RTC_GetTime(&hrtc, &current_time, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x01;
+	}
+	
+	info_field info;	
+	if(mode == 1)
+	{
+		current_time.DayLightSaving = RTC_DAYLIGHTSAVING_ADD1H;
+		info.sign = EVENT_INFO_SIGN_DAYLIGHT_SUMMER;
+	} else {
+		current_time.DayLightSaving = RTC_DAYLIGHTSAVING_SUB1H;
+		info.sign = EVENT_INFO_SIGN_DAYLIGHT_WINTER;
+	} 
+	
+	if(HAL_RTC_SetTime(&hrtc, &current_time, RTC_FORMAT_BCD) != HAL_OK)
+	{
+		return 0x02;
+	}
+	
+	event_handler_make_note(EVENT_CHANGING_MODE_OR_DATES_OF_DAYLIGHT_SAVING, info);
+	
+	return 0x00;
 }
 
 /**

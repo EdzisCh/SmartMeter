@@ -9,7 +9,7 @@ uint8_t count = 0;
 ! Отправка одного байта по  RS485. После передачи пин RX/TX_485 
   устанавливается в 0. Используется как senchar(char ch)
 */
-int rs485_send_byte( uint8_t byte )
+int rs485_send_byte( int byte )
 {
 	display_WIFI_on();
 	int output;
@@ -18,7 +18,7 @@ int rs485_send_byte( uint8_t byte )
 	HAL_Delay(40);
 	
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_SET);
-	output = HAL_UART_Transmit(&huart5, &byte, sizeof(byte), 100);
+	output = HAL_UART_Transmit(&huart5, (uint8_t*)&byte, 1, 100);
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
 
 	display_WIFI_off();
@@ -61,7 +61,7 @@ void UART5_IRQHandler(void)
 {
 	rs485_rx_byte_handler(&huart5);
 	return;
-	HAL_UART_IRQHandler(&huart5);
+	//HAL_UART_IRQHandler(&huart5);
 	
 }
 
@@ -71,6 +71,7 @@ void UART5_IRQHandler(void)
 */
 void rs485_rx_byte_handler(UART_HandleTypeDef* huart)
 {
+        display_WIFI_on();
 	if(huart->Instance == UART5)
 	{
 		if((huart->Instance->ISR & USART_ISR_RXNE) != RESET)
@@ -88,5 +89,6 @@ void rs485_rx_byte_handler(UART_HandleTypeDef* huart)
 			}
 		}
 	}
+        display_WIFI_off();
 	return;
 }

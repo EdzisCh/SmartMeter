@@ -16,7 +16,7 @@ extern UART_HandleTypeDef huart5;
 
 void UART5_IRQHandler(void);
 void rs485_rx_byte_handler(UART_HandleTypeDef* huart);
-int rs485_send_byte( uint8_t byte );
+int rs485_send_byte( int byte );
 uint8_t rs485_send_message( uint8_t *message, uint8_t size );
 void rs485_start( void );
 

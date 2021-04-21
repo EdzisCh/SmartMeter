@@ -3,23 +3,24 @@
 
 #include "stm32l4xx_hal.h"
 #include "stdio.h"
+#include "event_handler.h"
 
 //Ничальная дата и время в BCD формате
-#define INITIAL_HOUR 0x18
-#define INITIAL_MINUTE 0x33
+#define INITIAL_HOUR 0x16
+#define INITIAL_MINUTE 0x23
 #define INITIAL_SECUNDE 0x00
-#define INITIAL_DAY 0x25
-#define INITIAL_MONTH 0x02
+#define INITIAL_DAY 0x16
+#define INITIAL_MONTH 0x04
 #define INITIAL_YEAR 0x21
 
 extern RTC_HandleTypeDef hrtc;
-//extern RTC_TimeTypeDef current_time;
-//extern RTC_DateTypeDef current_date;
 
 uint8_t rtc_set_init_dateTime( void );
 
 uint8_t rtc_get_timestamp( uint32_t *timestamp );
 uint8_t rtc_date_update( uint32_t *timestamp );
+uint8_t rtc_enable_daylight_saving( uint8_t enable );
+uint8_t rtc_change_mode_daylight_saving( uint8_t mode );
 
 uint8_t rtc_set_hours( uint8_t hours );
 uint8_t rtc_set_minutes( uint8_t minutes );

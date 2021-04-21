@@ -1,4 +1,3 @@
 .mxproject
-MDK-ARM/SmartMeter/*
-MDK-ARM/DebugConfig/*
-MDK-ARM/JLinkLog.txt
+MDK-ARM/*
+EWARM/SmartMeter/*

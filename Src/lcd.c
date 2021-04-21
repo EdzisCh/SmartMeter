@@ -1,11 +1,12 @@
 #include "lcd.h"
+#include "stdlib.h"
 #include "stdio.h"
 
-	/**
-	!Инициализация дисплея. Установка значений для Internal Voltage adjustment, 
-	bias, frame freq и включаем клокирование
+/**
+!Инициализация дисплея. Установка значений для Internal Voltage adjustment, 
+bias, frame freq и включаем клокирование
 
-	*/
+*/
 uint8_t display_init( void )
 {
 	
@@ -24,10 +25,10 @@ uint8_t display_init( void )
 	return 0;
 }
 
-	/**
-	! Включение всех элементов дисплея
+/**
+! Включение всех элементов дисплея
 
-	*/
+*/
 uint8_t display_all_data_write( void )
 {
 	uint16_t address = 0x00;
@@ -70,7 +71,6 @@ uint8_t display_clear( void )
 
 /**
 !Запись данных в паямять ЖКИ по адресу address количеством sizeOfData
-
 */
 uint8_t display_data_write(uint16_t address, uint8_t *data, uint8_t sizeOfData)
 {
@@ -98,9 +98,65 @@ uint8_t display_byte_read( uint16_t address )
 	return byte;
 }
 
+//===================================================================================
+
+void display_write_group_number(uint8_t group_number)
+{
+	uint8_t value_to_write = display_byte_read(0x0A);
+	
+	if(group_number == 1)
+	{
+		value_to_write &= 1;
+		value_to_write |= 7;
+	} else if( group_number == 2 )
+	{
+		value_to_write &= 1;
+		value_to_write |= 124;
+	} else if( group_number == 3 )
+	{
+		value_to_write &= 1;
+		value_to_write |= 94;
+	}
+	
+	display_data_write(0x0A, &value_to_write, 1);
+}
+
+void display_tariff_number( uint8_t number )
+{
+	uint8_t value_to_write = display_byte_read(0x07);
+	
+	if(number == 1)
+	{
+		value_to_write &= 1;
+		value_to_write |= 7;
+	} else if( number == 2 )
+	{
+		value_to_write &= 1;
+		value_to_write |= 124;
+	} 
+	
+	display_data_write(0x07, &value_to_write, 1);
+}
+
+void display_tariff_number_clear( void )
+{
+	uint8_t value_to_write = display_byte_read(0x07);
+		
+	value_to_write &= 1;
+	
+	display_data_write(0x07, &value_to_write, 1);
+}
+
+void display_tariff_program_number( uint8_t number )
+{
+	uint8_t value_to_write = display_byte_read(0x09);
+	
+}
+
+//===================================================================================
+
 /**
 !Очистка цифр основного поля (8 больших сегментов)
-
 */
 void display_clear_main_numbers( void )
 {
@@ -148,8 +204,8 @@ void display_main_numbers(uint32_t number, uint8_t count, uint8_t dot_addr )
 	{
 		return;
 	}
-
-	uint8_t num_buff[count + 1];
+        
+	uint8_t num_buff[10];
 	//count + 1 = кол-во задействованых сегментов + 1 (номер точки, если есть)
 	
 	display_parse_number( number, num_buff, count);
@@ -224,7 +280,6 @@ void display_main_numbers(uint32_t number, uint8_t count, uint8_t dot_addr )
 			}
 		}
 	}
-
 }
 
 /*
@@ -350,7 +405,7 @@ void display_write_one_number( uint8_t number, uint8_t address )
 		case 0x10:
 			number_mask_msb = MAIN_DOT_MSB;
 			number_mask_lsb = MAIN_DOT_LSB;
-		
+                        break;
 		default:
 			break;
 	}
@@ -429,6 +484,17 @@ void display_L3( void )
 	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 0, 1, &value, 1, 255);
 }
 
+void display_clear_phases( void )
+{
+	uint8_t value = 0x1F;
+	
+	uint8_t current_value = display_byte_read(0);
+	
+	value &= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 0, 1, &value, 1, 255);
+}
+
 void display_R1( void )
 {
 	uint8_t value = 4;
@@ -473,13 +539,35 @@ void display_N( void )
 	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 0x01, 1, &value, 1, 255);
 }
 
-void display_battery( void )
+void display_clear_pass_symbols( void )
+{
+	uint8_t value = 0xFC;
+	
+	uint8_t current_value = display_byte_read(1);
+	
+	value &= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 0x01, 1, &value, 1, 255);
+}
+
+void display_battery_on( void )
 {
 	uint8_t value = 8;
 	
 	uint8_t current_value = display_byte_read( 19 );
 	
 	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 19, 1, &value, 1, 255);
+}
+
+void display_battery_off( void )
+{
+        uint8_t value = 0xF7;
+	
+	uint8_t current_value = display_byte_read( 19 );
+	
+	value &= current_value;
 	
 	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 19, 1, &value, 1, 255);
 }
@@ -736,6 +824,22 @@ void display_Hz( void )
 	uint8_t value = 0x08;
 	
 	uint8_t current_value = display_byte_read( 6 );
+	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 6, 1, &value, 1, 255);
+}
+
+void display_VA( void )
+{
+	display_clear_units();
+	uint8_t value = 0x20;
+	uint8_t current_value = display_byte_read( 5 );
+	value |= current_value;
+	
+	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 5, 1, &value, 1, 255);
+	
+	value = 0x01;
+	current_value = display_byte_read( 6 );
 	value |= current_value;
 	
 	HAL_I2C_Mem_Write(&hi2c2, LCD_ADDRESS, 6, 1, &value, 1, 255);

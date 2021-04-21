@@ -1,8 +1,8 @@
 #ifndef __LCD_H__
 #define __LCD_H__
-	
+
 #include "stm32l4xx_hal.h"
-#include "stdint.h"	
+#include "stdint.h"
 	
 #define LCD_ADDRESS 0x7E
 
@@ -70,6 +70,13 @@ uint8_t display_data_write( uint16_t address, uint8_t *data, uint8_t sizeOfData 
 
 //===================================================================================
 
+void display_write_group_number( uint8_t group_number );
+void display_tariff_number( uint8_t number );
+void display_tariff_number_clear( void );
+void display_tariff_program_number( uint8_t number );
+
+//===================================================================================
+
 void display_clear_main_numbers( void );
 void display_main_numbers( uint32_t number, uint8_t count, uint8_t dot_addr );
 void display_main_numbers_double( double number );
@@ -81,11 +88,14 @@ void display_parse_number( uint32_t input, uint8_t *numbers, uint8_t count );
 void display_L1( void );
 void display_L2( void );
 void display_L3( void );
+void display_clear_phases( void );
 void display_R1( void );
 void display_R2( void );
 void display_P( void );
 void display_N( void );
-void display_battery( void );
+void display_clear_pass_symbols( void );
+void display_battery_on( void );
+void display_battery_off( void );
 void display_ExMark( void );
 void display_lock_1( void );
 void display_lock_2( void );
@@ -106,6 +116,7 @@ void display_VAr( void );
 void display_A( void );
 void display_VAr_h( uint8_t pos );
 void display_Hz( void );
+void display_VA( void );
 
 //===================================================================================
 
