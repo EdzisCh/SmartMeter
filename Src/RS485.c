@@ -14,9 +14,6 @@ int rs485_send_byte( int byte )
 	display_WIFI_on();
 	int output;
 	
-	//Задержка для предотвращения потерь 
-	HAL_Delay(40);
-	
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_SET);
 	output = HAL_UART_Transmit(&huart5, (uint8_t*)&byte, 1, 100);
 	HAL_GPIO_WritePin(RX_TX_485_GPIO_Port, RX_TX_485_Pin, GPIO_PIN_RESET);
@@ -71,7 +68,6 @@ void UART5_IRQHandler(void)
 */
 void rs485_rx_byte_handler(UART_HandleTypeDef* huart)
 {
-        display_WIFI_on();
 	if(huart->Instance == UART5)
 	{
 		if((huart->Instance->ISR & USART_ISR_RXNE) != RESET)
@@ -89,6 +85,5 @@ void rs485_rx_byte_handler(UART_HandleTypeDef* huart)
 			}
 		}
 	}
-        display_WIFI_off();
 	return;
 }

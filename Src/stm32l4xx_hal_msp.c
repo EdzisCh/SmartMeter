@@ -51,7 +51,8 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     /* Peripheral clock enable */
     __HAL_RCC_ADC_CLK_ENABLE();
   /* USER CODE BEGIN ADC1_MspInit 1 */
-
+//    HAL_NVIC_SetPriority(ADC1_IRQn, 15, 15);
+//    HAL_NVIC_EnableIRQ(ADC1_IRQn);
   /* USER CODE END ADC1_MspInit 1 */
   }
 
@@ -68,7 +69,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
     /* Peripheral clock disable */
     __HAL_RCC_ADC_CLK_DISABLE();
   /* USER CODE BEGIN ADC1_MspDeInit 1 */
-
+//    HAL_NVIC_DisableIRQ(ADC1_IRQn);
   /* USER CODE END ADC1_MspDeInit 1 */
   }
 
@@ -363,7 +364,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
     HAL_GPIO_Init(MCU_RX_485_GPIO_Port, &GPIO_InitStruct);
 
     /* UART5 interrupt Init */
-    HAL_NVIC_SetPriority(UART5_IRQn, 1, 1);
+    HAL_NVIC_SetPriority(UART5_IRQn, 2, 2);
     HAL_NVIC_EnableIRQ(UART5_IRQn);
   /* USER CODE BEGIN UART5_MspInit 1 */
 
@@ -522,17 +523,3 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
   }
 
 }
-
-/* USER CODE BEGIN 1 */
-
-/* USER CODE END 1 */
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

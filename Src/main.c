@@ -58,10 +58,12 @@ static void MX_TIM5_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_ADC1_Init(void);
+static void EXTI15_10_IRQHandler_Config(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void main_display_data_on_LCD(data *data, uint8_t group_number, uint8_t cycle);
-  
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle);
+
 int main(void)
 {
 	HAL_Init();
@@ -78,11 +80,10 @@ int main(void)
 	MX_USART2_UART_Init();
 	MX_USART3_UART_Init();
 	MX_ADC1_Init();
+	EXTI15_10_IRQHandler_Config();
 	
   /* USER CODE BEGIN 2 */
-
-	printf("--START--\r\n");
-                
+        
 	HAL_GPIO_WritePin(LED_BL_GPIO_Port, LED_BL_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(LED_ACT_GPIO_Port, LED_ACT_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(LED_REACT_GPIO_Port, LED_REACT_Pin, GPIO_PIN_RESET);
@@ -103,8 +104,10 @@ int main(void)
 	chip_L1.cs5490_huart = &huart1;
 	chip_L2.cs5490_huart = &huart2;
 	chip_L3.cs5490_huart = &huart3;
-        
-    uint8_t init = cs5490_init(&chip_L1, &chip_L2, &chip_L3);
+    
+	//cs5490_full_callibration(&chip_L1, &chip_L2, &chip_L3);
+    
+	uint8_t init = cs5490_init(&chip_L1, &chip_L2, &chip_L3);
 	if(init == 0)
 	{
 		display_L1();
@@ -154,14 +157,7 @@ int main(void)
 
 	uint32_t timestamp[2];
 	rtc_get_timestamp(timestamp);
-	
-//	uint8_t test_result = tests_run();
-//	if(test_result)
-//	{
-//		display_ExMark();
-//		display_main_numbers_double(test_result);
-//		HAL_Delay(500);
-//	}
+        
 	
   /* USER CODE END 2 */
 
@@ -169,7 +165,7 @@ int main(void)
   while (1)
   {
 		int32_t time_start = uwTick;
-		
+                
 		Vrms_1 = cs5490_get_Vrms(&chip_L1);
 		freq_1 = cs5490_get_freq(&chip_L1);
 		Pavg_1 = cs5490_get_Pavg(&chip_L1);
@@ -259,6 +255,20 @@ int main(void)
 		{
 			group_number = 1;
 		}
+                
+                HAL_ADC_Start(&hadc1);
+                HAL_ADC_PollForConversion(&hadc1, 100);
+                
+                float Vbat_voltage = (float) HAL_ADC_GetValue(&hadc1)*16/4096;
+                
+                if(Vbat_voltage < 3.0)
+                {
+                  display_battery_on();
+                } else if( Vbat_voltage >= 3.0 ) {
+                  display_battery_off();
+                }
+                
+                HAL_ADC_Stop(&hadc1);
 		
 	    uint32_t delay = uwTick - time_start;
 		uint32_t stop = uwTick;
@@ -308,6 +318,60 @@ void main_display_data_on_LCD(data *data, uint8_t group_number, uint8_t cycle)
 	}
 
 }
+
+//void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
+//{
+//  vbat_source = (float) HAL_ADC_GetValue(&hadc1)*16/4096;
+//  
+//  //HAL_ADC_Start_IT(&hadc1);
+//}
+
+static void EXTI15_10_IRQHandler_Config(void)
+{
+  GPIO_InitTypeDef   GPIO_InitStructure;
+
+  /* Configure PC.13 pin as input floating */
+  GPIO_InitStructure.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStructure.Pull = GPIO_NOPULL;
+  GPIO_InitStructure.Pin = GPIO_PIN_13;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
+  
+  GPIO_InitStructure.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStructure.Pull = GPIO_NOPULL;
+  GPIO_InitStructure.Pin = GPIO_PIN_5 | GPIO_PIN_6;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStructure);
+
+  /* Enable and set EXTI lines 15 to 10 Interrupt to the lowest priority */
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+}
+
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  GPIO_PinState key_1, key_2, key_3;
+
+  key_1 = HAL_GPIO_ReadPin(KEY_1_GPIO_Port, KEY_1_Pin);
+  key_2 = HAL_GPIO_ReadPin(KEY_2_GPIO_Port, KEY_2_Pin);
+  key_3 = HAL_GPIO_ReadPin(KEY_3_GPIO_Port, KEY_3_Pin);
+
+  if ( key_1 == GPIO_PIN_RESET || key_2 == GPIO_PIN_RESET || key_3 == GPIO_PIN_RESET )
+  {
+    event_handler_beep_on();
+        
+    while( key_1 == GPIO_PIN_RESET|| key_2 == GPIO_PIN_RESET || key_3 == GPIO_PIN_RESET )
+    {
+      key_1 = HAL_GPIO_ReadPin(KEY_1_GPIO_Port, KEY_1_Pin);
+      key_2 = HAL_GPIO_ReadPin(KEY_2_GPIO_Port, KEY_2_Pin);
+      key_3 = HAL_GPIO_ReadPin(KEY_3_GPIO_Port, KEY_3_Pin);
+    }
+  }
+  
+  event_handler_beep_off();
+}
+
 
 void SystemClock_Config(void)
 {
@@ -370,7 +434,7 @@ void SystemClock_Config(void)
   PeriphClkInit.PLLSAI1.PLLSAI1N = 8;
   PeriphClkInit.PLLSAI1.PLLSAI1P = RCC_PLLP_DIV7;
   PeriphClkInit.PLLSAI1.PLLSAI1Q = RCC_PLLQ_DIV2;
-  PeriphClkInit.PLLSAI1.PLLSAI1R = RCC_PLLR_DIV2;
+  PeriphClkInit.PLLSAI1.PLLSAI1R = RCC_PLLR_DIV8;
   PeriphClkInit.PLLSAI1.PLLSAI1ClockOut = RCC_PLLSAI1_ADC1CLK;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
@@ -617,7 +681,7 @@ static void MX_UART5_Init(void)
 {
 
   huart5.Instance = UART5;
-  huart5.Init.BaudRate = 2400;
+  huart5.Init.BaudRate = 38400;
   huart5.Init.WordLength = UART_WORDLENGTH_8B;
   huart5.Init.StopBits = UART_STOPBITS_1;
   huart5.Init.Parity = UART_PARITY_NONE;

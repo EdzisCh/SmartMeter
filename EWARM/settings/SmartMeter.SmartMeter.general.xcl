@@ -2,7 +2,7 @@
 
 "C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.1\arm\bin\armjlink2.dll" 
 
-"C:\MCprojects\Nero\IAR\EWARM\SmartMeter\Exe\SmartMeter.out" 
+"C:\MCprojects\Nero\SmartMeter\SmartMeter\EWARM\SmartMeter\Exe\SmartMeter.out" 
 
 --plugin="C:\Program Files (x86)\IAR Systems\Embedded Workbench 8.1\arm\bin\armbat.dll" 
 
